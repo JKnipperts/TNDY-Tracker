@@ -1,0 +1,152 @@
+The TNDY Tracker file format v1:
+--------------------------------
+This file describes the structure of the TND file format that TNDY Tracker uses to store music for the TI SN76496A sound generator chip.
+The format is based on the classic module formats of other trackers for the PC and the Amiga.
+
+ 1. The Header:
+
+TND files start with a header section which allows to identify the files and contains basic information.
+
+Here is the structure of the header:
+
+  ID-String ("TNDY")    4  Byte
+  File format version   1  Byte
+  Number of channels    1  Byte
+  Songlength	        1  Byte
+  Loop position         1  Byte
+  Number of patterns    1  Byte
+  Speed 		1  Byte
+  Tempo                 1  Byte
+
+
+The actual file format version is 1.
+Speed is the number ticks per row. Tempo the timer speed in Hz (ticks per second).
+A Tempo of 0 means the standard IBM PC timer speed of 18.2 Hz.
+
+2. Song Description:
+
+After the header follows the song description. This short text gives the composer the possibility to save some information in the song file.
+This information is stored as follows:
+
+First comes a word that holds the size of the compressed text.
+
+  Size of compressed message	2 Byte
+
+The description is a simple Ascii text with a maximum of 400 characters. To keep the file size small it is compressed as follows:
+ASCII characters (> 20h) are taken directly, but if more than three spaces/0 bytes follow each other, they are encoded as follows
+The first byte contains the value 01, this serves as a marker. This is followed by a word containing the number of spaces to be inserted.
+Note that the spaces are always coded with the value 0!
+So if there is no message, there are five bytes at this position: first a Word with the value 3, the size of the packed text.
+Then the marker byte (value 01) and then a Word with the value 400, because an empty description consists of 400 bytes with the value 0.
+
+3. Pattern Order Table:
+
+Now comes the pattern order table.
+This table is stored a sequence of bytes representing a position in pattern order and containing the respective pattern number.
+Its size is defined by the "songlength" byte stored in the header. The maximum size of this list is 255 bytes.
+
+4. Pattern data:
+
+After the pattern order table the pattern data follows. A pattern consists of 64 rows and four or five tracks (3 Tandy-Voices + optional Speaker voice + Noise channel).
+How many tracks are stored in the pattern data can be seen in the header (Number of voices).
+The tracks are stored one after the other, starting with the three Tandy voices. If available, the track for the additional speaker voice follows.
+The last is allways the noise channel.
+The data for each track is stored in form of events. An event consists of the information about note, octave, volume and possible effect commands with parameters.
+To keep the files as small as possible, the data for each event is stored as space-saving as possible.
+
+
+4.1 Format of voice-events:
+
+For the tracks that correspond to a voice channel (including the optional one for the PC Speaker) events are stored as three bytes:
+
+ BYTES: x,y,z:
+
+ xxxxxxxxyyyyyyyyzzzzzzzz
+ 000011112222333344444444
+
+ Meaning of the bits:
+ 0 = Note
+ 1 = Octave
+ 2 = Volume (0 to 15)
+ 3 = Effect command
+ 4 = Effect parameter
+
+Notes are stored as numbers from 1 to 12. 1 stands for a C, 2 for C#, 3 for D and so on.
+The tuning used by TNDY Tracker is A4 = 440 Hz.
+If the value is 0, then this event does not contain a new note, but a change in volume or effects.
+A value of 13 means a key-off and a 14 means that there is no note or volume and this event just consists of an effect.
+The volume is saved in four bits with possible values of 0 to 15. So it would not be clear if 0 means full volume or no volume at all.
+To slove this problem the note 14 marker had been added.
+
+Note that the attenuation of the TI SN76496A can take values from 0 to 15 (0Fh), where 0 is the maximum volume!
+
+4.1.1 Effects:
+
+ 00 = Arpeggio
+ The parameter byte contains a semitone offset in each nibble.
+ Arpeggio quickly alters the note pitch between the base note and two given semitone offset.
+ Each pitch is played for the duration of 1 tick. If speed is higher than 3 (meaning there are more than 3 ticks per row), the sequence is looped.
+
+ 01 = Portamento up
+ 02 = Portamento down
+ Portamento slides the note pitch up or down. With each tick the value in the parameter is added or subtracted from the current frequency.
+
+ 03 = Porta to note / Toneslide
+ This variant of the portamento command bends the already playing note pitch towards another one, entered with the 3xx command.
+ Again the effect is applied on every tick and the speed of the slide is defined by the parameter.
+
+ 04 = Volume slide
+ Slides note volume up/down at speed x/y depending on which parameter is specified. Effect is applied per tick;
+
+ 05 = Toneslide and Volume slide
+ This effect continues a previously started Toneslide and also performs a volume slide.
+ Parameters work like those for the normal Volume slide (04).
+
+ 0A = Fintetune
+ This effect is used to fine tune the pitch of a note. It works slightly different in TNDY tracker than in other trackers.
+ The parameter specifies a value in Hertz (Hz) to be added to or subtracted from the frequency of the note.
+ If the parameter contains a value < 128 (80h), it will be subtracted from the frequency of the note, a value of 128 or higher will be added (-128, of course).
+
+ 0B = Jump
+ Immediately breaks the current pattern and jumps to the defined order in the pattern order table.
+
+ 0D = Pattern break
+ Breaks the current pattern and jumps jumps to the row defined in the parameter on the next pattern.
+
+ 0F = Set Speed
+ If the parameter contains a value less than 31 (1Fh), then this is the new speed value (amount of ticks per row).
+ Values above 1F stand for a change of the tempo (timer frequency in ticks per second).
+
+
+4.2 Format of noise-events:
+
+The last track, the one for the noise channel, is stored in a different way, since much less information is needed here.
+A complete event for the noise channel is stored in only one byte!
+Here is the structure of this byte:
+
+ BYTES: x
+
+ xxxxxxxx
+ 00012222
+
+ Meaning of the bits:
+ 0 = Freqency (1= 550Hz, 2=1165Hz, 3=2330Hz, 4= Use freq. of voice 3)
+ 1 = Bit to define Feedback / noise type (0 = Periodic noise, 1 = White noise)
+ 2 = Volume (0 to 15)
+
+
+Empty events are not stored in detail. If empty events follow in the track, then they are summarized as follows (2 bytes):
+
+ BYTES: x,y
+
+ x = This byte has the value FFh and simply serves as a marker to show that this is no regular event.
+ y = The second byte holds the number of empty events to add at the current position in the track.
+
+If you are reading the files in your program, you should first check if the first byte of an event is FFh and then either process the event or insert empty spaces.
+In this way, all patterns are stored one after the other in the file. You can find the total number of patterns in the header, as you already know.
+
+And this is all about how the data is stored in the TND files.
+The exact meaning of the values, like the frequency noise data or volume values can be found in the technical details of the sound chip.
+For more information on this, see for example: https://wiki.scummvm.org/index.php/AGI/Specifications/Sound#The_tone_generation
+
+Jan Knipperts / September 2020
