@@ -6,7 +6,7 @@
 
  Author: Jan Knipperts
  Program: TNDY-Tracker
- Version: 1.1
+ Version: 1.11
 
 ***************************************************************
 }
@@ -156,7 +156,7 @@
  Procedure Edit_Message;
  var
      ox,oy,x,y : byte;
-     z,posi    : word;
+     posi      : word;
 
  const
   min_x : byte = 21;

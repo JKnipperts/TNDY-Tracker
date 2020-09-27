@@ -3,7 +3,7 @@
  Textmode
  Useful procedures and functions for fast drawing and
  buffering in 80x25 text mode
- Version 1.92 - 11.09.2020
+ Version 1.93 - 27.09.2020
  Author: Jan Knipperts
  *******************************************************
 }
@@ -262,7 +262,6 @@ end;
 
 
 Procedure Box(xp,yp,xp1,yp1 : word; foreground, background : byte; slim : boolean);
-var xc,yc : word;
 begin
  Block(xp,yp,xp1,yp1,foreground,background);
  if slim then
@@ -363,7 +362,7 @@ end;
 
 
 Procedure InitMenuScreen(title : string; fc, bc : byte);
-var x,y,z,c : byte;
+var z : byte;
 begin
   z := 0 or 7 and not (1 shl 7);   {Textfarbe 7, Hintergrund 0, blinken aus}
   Fill('±',z);
@@ -603,7 +602,7 @@ end;
 
 
  Procedure Writeln(s : string);
- var cnt,y : byte;
+ var y : byte;
  begin
   write(s);
   y := getY;

@@ -5,12 +5,13 @@
  Fileselector
  Author: Jan Knipperts
 
- Version  1.1 - April 23, 2020
+ Version  1.11 - Sptember 29, 2020
           (I wrote version 1.0 on July 12, 1998 :) )
 
           Changes:
            - Added screen buffering
            - Now uses my keyboard unit instead of borlands crt
+           - Some clean up
 
 ***************************************************************
 }
@@ -90,9 +91,8 @@ const
 
 var
  sdir                         : searchrec;
- drive                        : DirRec;
  Dir                          : DirList;
- num_entries,fc               : word;
+ num_entries                  : word;
  mask                         : string;
  Path,Olddir                  : PathStr;
  D                            : DirStr;
@@ -101,7 +101,6 @@ var
  w                            : array[1..10] of string[5];
  wc                           : byte;
  Less                         : LessFunc;
- screenbuffer		      : pointer;
 
 
 
@@ -411,7 +410,7 @@ Function User_selected_File(wildcards : string; sortby : Lessfunc; xpos,ypos,num
  returned by this function.
  If you don't use a screenbuffer make the pointer point to video memory}
 var start,marked : word;
-    mx,my,lp,z   : byte;
+    mx,my,z      : byte;
     cs           : Pathstr;
 
 begin

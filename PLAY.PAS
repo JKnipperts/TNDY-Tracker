@@ -5,7 +5,7 @@
 
  Author: Jan Knipperts
  Program: TNDY-Tracker
- Version: 1.1
+ Version: 1.11
 
 ***************************************************************
 }
@@ -532,7 +532,7 @@ end;
 
 Procedure Playrow(rn : byte);
 {Plays one Player.row}
-var v,on,oc,i,eff,ep,chan : byte;
+var on,oc,eff,ep,chan   : byte;
     pitch               : integer;
 
     label Restart;

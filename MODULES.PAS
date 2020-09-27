@@ -6,7 +6,7 @@
 
  Author: Jan Knipperts
  Program: TNDY-Tracker
- Version: 1.1
+ Version: 1.11
 
 ***************************************************************
 }
@@ -270,7 +270,6 @@ Procedure Compress_Message;
 var
  mc,pc  : word;
  nc,c   : word;
- dummy  : byte;
 
 
 begin
@@ -326,7 +325,6 @@ end;
 Procedure SaveTNDY(filename : string);
 var
     ncount : byte;
-    c      : char;
 
 begin
 
@@ -454,7 +452,7 @@ end;
 
 
 Procedure Save_Song;
-var x,y : byte;
+var x : byte;
 begin
   move(buffer.blankscreen^,buffer.screen2^,4000);
   writeto(buffer.screen2);
@@ -542,8 +540,8 @@ end;
 
 
 Procedure Uncompress_Pattern_Data;
-var pc,tc,rc,sr,dummy : byte;
-    Cevent   : Comp_event;
+var pc,tc,rc,dummy  : byte;
+    Cevent          : Comp_event;
 begin
  for pc := 0 to Player.MaxPattern do
  begin
@@ -706,9 +704,6 @@ end;
 
 
 Procedure LoadTNDY(filename : string);
-var ncount : byte;
-    c      : char;
-
 begin
  if filename <> '' then
  begin
@@ -849,8 +844,7 @@ type
    f            : file;
    Header       : SNDHeader;
    Note         : SNDNote;
-   i,
-   oldatt       : byte;
+   i		: byte;
    time,r       : real;
    Endpos       : array[0..3] of word;
    orig_freq,
