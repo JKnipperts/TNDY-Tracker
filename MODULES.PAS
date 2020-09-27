@@ -925,7 +925,6 @@ begin
 
       seek(f,Header.Offset[Editor.chan]);                      {Go to start of track}
 
-      oldatt := 0;
       Player.Position := 0;
       Player.row := 0;
       r := 0;

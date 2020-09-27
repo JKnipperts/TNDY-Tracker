@@ -116,7 +116,7 @@ begin
     oldint08;
   end;
 
-  Timing.clock_tick := Timing.clock_tick+round(Timer.Frequency / 18.2065);
+  Timing.clock_tick := Timing.clock_tick+Timer.Clock_Counter;
   If (Timing.clock_tick >= 1) then Timing.clock_tick := 0;
 
 end;
