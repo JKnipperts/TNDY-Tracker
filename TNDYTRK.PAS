@@ -1,10 +1,5 @@
 {$G-,N-,E-}
 
-{Todo:
-   - Menüs ausrichten
-   - Alles nochmal gründlich prüfen}
-
-
 {
  Tracker for TNDY and TLPT Tandy 3-Voice sound devices
  Version 1.1 - 28/09/20
