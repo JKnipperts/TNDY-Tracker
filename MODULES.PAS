@@ -835,7 +835,8 @@ type
 
  SNDNote    = record
   Duration      : word;
-  Freq1, Freq2  : byte;
+  Freq1,
+  Freq2         : byte;
   Attenuation   : byte;
  end;
 
@@ -849,7 +850,7 @@ type
    Endpos       : array[0..3] of word;
    orig_freq,
    note_freq	: word;
-   n,o 		: byte;
+   n,o          : byte;
    d,nt		: byte;
    c		: word;
 
@@ -944,11 +945,10 @@ begin
          exit;
         end;
 
-
         Note.Attenuation := (Note.Attenuation and not $F0);    {get attenuation nibble}
 
-        patterns[Player.Position]^[Player.row][Editor.chan].volume :=
-        Note.Attenuation+1; {we save the volume as 1 to 16 in our pattern...}
+        patterns[Player.Position]^[Player.row][Editor.chan].volume := Note.Attenuation+1;
+        {we save the volume as 1 to 16 in our pattern...}
 
         if Editor.chan < 3 then						{Normal note}
         begin
@@ -957,12 +957,11 @@ begin
           Freq_to_Note(orig_freq,n,o);			    {Convert it to nearest note value}
           patterns[Player.Position]^[Player.row][Editor.chan].note := n;  	    {save it in pattern}
           patterns[Player.Position]^[Player.row][Editor.chan].Octave := o;
-          note_freq := Note_to_Freq(n,o);		    {Get the frequency of this note}
-
 
           if (note_freq <> orig_freq) and (snd.correct = true) then
-           {Use Finetune effect to correct deviations between the frequencies}
+           {Use Finetune effect to correct deviations between the frequencies if enabled}
           begin
+            note_freq := Note_to_Freq(n,o);		    {Get the frequency of this note}
 
             if note_freq > orig_freq then
             begin

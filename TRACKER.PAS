@@ -24,6 +24,7 @@ Procedure UpdatePatternOrder(update_screen : boolean);
 Procedure Draw_Pattern_View(update_screen : boolean);
 Procedure Draw_Pattern_Editor(update_screen : boolean);
 Procedure Draw_Player_State(update_screen : boolean);
+Procedure Draw_Noise_Info;
 Procedure Update_Player_State;
 
 
@@ -244,9 +245,7 @@ Procedure UpdatePatternOrder(update_screen : boolean);
    putchar(Editor.p_xp+36,5,'Å',palette.text_color1,palette.window_color);
 
    mainmenu := false;
-   UpdatePatternView(-8,update_screen);
-   if update_screen then ViewBuffer(buffer.screen1);
-   gotoxy(Editor.p_xp+4,14);
+   UpdatePatternView(editor.markedrow-8,update_screen);
  end;
 
 
@@ -276,6 +275,15 @@ begin
    if update_screen then ViewBuffer(buffer.screen1);
 end;
 
+
+Procedure Draw_Noise_Info;
+begin
+   fastwrite(65,6,palette.text_color1,palette.window_color,' Noise:');
+   if Editor.noisetype = 1 then
+    fastwrite(72,6,palette.text_color2,palette.window_color,'White')
+   else
+    fastwrite(72,6,palette.text_color2,palette.window_color,'Peri.');
+end;
 
 {============ Draw the extra window for the player ==============}
 Procedure Draw_Player_State(update_screen : boolean);

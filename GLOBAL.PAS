@@ -19,7 +19,7 @@ uses dos;
 
 const
  title          : string = 'TNDY Tracker by Jan Knipperts';
- version        : string = 'Version 1.1a Pre-release';
+ version        : string = 'Version 1.1';
 
 
 type
@@ -145,6 +145,7 @@ type
     markedrow   : byte;        {Current row for editing}
     octave      : byte;	       {Current octave}
     curr_vol    : byte;        {Current volume}
+    noisetype   : byte;	       {Type of noise for noise channel}
     chan        : byte;        {Current channel}
     Channels    : byte;        {Number of channels}
     new_note	: boolean;     {Was the note re-entered?}

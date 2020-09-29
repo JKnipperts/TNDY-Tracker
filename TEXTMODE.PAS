@@ -744,7 +744,7 @@ begin
    begin
     if b < 10 then
     c2 := '  ' + c2;
-    if (b > 10)  and (b < 100) then
+    if (b >= 10)  and (b < 100) then
     c2 := ' ' + c2;
    end;
 
@@ -789,7 +789,7 @@ begin
    begin
     if b < 10 then
     c2 := '00' + c2;
-    if (b > 10)  and (b < 100) then
+    if (b >= 10)  and (b < 100) then
     c2 := '0' + c2;
    end;
 

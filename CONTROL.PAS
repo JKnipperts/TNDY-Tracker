@@ -211,6 +211,7 @@ begin
     cursor(true);
     Change_cursor(0,7);
 
+
     case key_code of
 
         1: {ESC}
@@ -240,7 +241,6 @@ begin
      	    pedit := false;
      	    clear_keyboard_buffer;
      	    Timing.ticks := 0;               {Reset counter}
-     	    pedit := false;
      	    pause := false;
         end;
 
@@ -282,6 +282,10 @@ begin
            if getX = (editor.p_xp+13)+((Editor.chan-1)*11) then
            begin
              inc(Editor.chan);
+
+             If Editor.chan = Editor.channels then
+              Draw_Noise_Info;
+
              noteedit := true;
              gotoxy((editor.p_xp+4)+((Editor.chan-1)*11),14);
            end
@@ -294,12 +298,15 @@ begin
              if getX = (editor.p_xp+4)+((Editor.chan-1)*11) then gotoxy((editor.p_xp+8)+((Editor.chan-1)*11),14);
            end;
 
+
          end
          else
          begin
             if getX = ((editor.p_xp+10)+((Editor.chan-1)*11)) then
             begin
               Editor.chan := 1;
+              Draw_Pattern_editor(true);
+
               noteedit := true;
               gotoxy((editor.p_xp+4)+((Editor.chan-1)*11),14);
             end
@@ -311,9 +318,6 @@ begin
             end;
          end;
 
-         if (Editor.channels = 5) and (Editor.chan <> 3) then
-         if Editor.octave = 1 then Editor.octave := 2;
-         {A-2 is the lowest note for Tandy sound. Therefore octave 1 is not possible here}
        end;
 
 
@@ -325,6 +329,8 @@ begin
            if getX = (editor.p_xp+4)+((Editor.chan-1)*11) then
            begin
              dec(Editor.chan);
+             Draw_Pattern_editor(true);
+
              gotoxy((editor.p_xp+13)+((Editor.chan-1)*11),14);
              noteedit := false;
            end;
@@ -353,6 +359,8 @@ begin
              else
              begin
                Editor.chan := Editor.channels;
+               Draw_Noise_Info;
+
                gotoxy((editor.p_xp+10)+((Editor.chan-1)*11),14);
                noteedit := false;
              end;
@@ -372,11 +380,10 @@ begin
              if getX = (editor.p_xp+13)+((Editor.chan-1)*11) then gotoxy((editor.p_xp+12)+((Editor.chan-1)*11),14);
 
            end;
+
          end;
 
-         if (Editor.channels = 5) and (Editor.chan <> 3) then
-         if Editor.octave = 1 then Editor.octave := 2;
-         {A-2 is the lowest note for Tandy sound. Therefore octave 1 is not possible here}
+
       end;
 
 
@@ -389,12 +396,14 @@ begin
            if Editor.chan < Editor.channels then
            begin
     	     inc(Editor.chan);
+    	     if Editor.chan = Editor.channels then Draw_noise_info;
     	     noteedit := true;
     	     gotoxy((editor.p_xp+4)+((Editor.chan-1)*11),14);
            end
            else
            begin
     	    Editor.chan := 1;
+            Draw_Pattern_Editor(true);
     	    noteedit := true;
     	    gotoxy((editor.p_xp+4)+((Editor.chan-1)*11),14);
            end;
@@ -404,12 +413,14 @@ begin
            if Editor.chan > 1 then
            begin
     	     dec(Editor.chan);
+    	     Draw_Pattern_Editor(true);
     	     noteedit := true;
     	     gotoxy((editor.p_xp+4)+((Editor.chan-1)*11),14);
            end
           else
            begin
     	     Editor.chan := Editor.channels;
+    	     Draw_noise_info;
     	     noteedit := true;
     	     gotoxy((editor.p_xp+4)+((Editor.chan-1)*11),14);
            end;
@@ -452,8 +463,16 @@ begin
        begin
          if (L_Shift_State = true) or (R_Shift_State = true) then   {Shift + Pgup = increase octave}
          begin
-           if Editor.octave < 9 then inc(Editor.octave);
-           fastwrite(72,6,palette.text_color2,palette.window_color,hexb(editor.octave));
+           if (Editor.chan = Editor.channels) then
+           begin
+             if editor.noisetype < 2 then inc(editor.noisetype);
+             Draw_Noise_Info;
+           end
+           else
+           begin
+             if editor.octave < 9 then inc(editor.octave);
+             fastwrite(72,6,palette.text_color2,palette.window_color,hexb(editor.octave));
+           end;
          end;
 
          if (L_Shift_State = false) and
@@ -469,12 +488,21 @@ begin
        begin
          if (L_Shift_State = true) or (R_Shift_State = true) then   {Shift and Pgdown = decrease octave}
          begin
-           if editor.octave > 2 then dec(editor.octave);
-
-           if (Editor.channels = 5) and ((Editor.chan-1) = 3) then
+           if (Editor.chan < 4) then
+           begin
+             if editor.octave > 2 then dec(editor.octave);
+             fastwrite(72,6,palette.text_color2,palette.window_color,hexb(editor.octave));
+           end;
+           if (Editor.chan = 4) and (Editor.channels = 5) then
+           begin
              if editor.octave > 0 then dec(editor.octave);
-
-           fastwrite(72,6,palette.text_color2,palette.window_color,hexb(editor.octave));
+             fastwrite(72,6,palette.text_color2,palette.window_color,hexb(editor.octave));
+           end;
+           if (Editor.chan = Editor.channels) then
+           begin
+             if editor.noisetype > 1 then dec(editor.noisetype);
+             Draw_Noise_Info;
+           end;
          end
          else
          begin
@@ -814,15 +842,10 @@ begin
          Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].note := key_code-1;
          Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].volume := Editor.curr_vol+1;
 
-         if editor.octave < 2 then
-         begin
-           Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].octave := editor.octave;
-           if editor.octave = 0 then inc(Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].octave);
-         end
-         else
-           Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].octave := 2;
+         Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].octave := editor.noisetype;
 
-         case Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].octave of
+
+         case Editor.noisetype of
           1: Fastwrite((editor.p_xp+9)+((Editor.chan-1)*11),14,palette.text_color1,palette.mark_color,' W');
           2: Fastwrite((editor.p_xp+9)+((Editor.chan-1)*11),14,palette.text_color1,palette.mark_color,' P');
          end;
@@ -991,8 +1014,7 @@ begin
           move(buffer.screen1^,buffer.oldscreen^,4000);
           mainmenu := true;
           pause := true;
-          TANDY_Mute_ALL;
-          MuteXtra;
+          Mute_ALL;
           DrawMenu(2);
           viewbuffer(buffer.screen1);
          end;
@@ -1001,8 +1023,7 @@ begin
   	begin
       	    pause := true;
       	    pedit := true;
-      	    TANDY_Mute_ALL;
-      	    MuteXtra;
+      	    Mute_ALL;
       	    Draw_Pattern_Editor(true);
    	end;
 
@@ -1029,8 +1050,7 @@ begin
            Player.row := 0;
            UpdatePatternView(Player.row-8,false);
            Update_Player_State;
-           TANDY_Mute_ALL;
-      	   MuteXtra;
+           Mute_ALL;
          end;
       end;
 
@@ -1043,8 +1063,7 @@ begin
          Player.row := 0;
          UpdatePatternView(Player.row-8,false);
          Update_Player_State;
-         TANDY_Mute_ALL;
-      	 MuteXtra;
+         Mute_ALL;
         end;
      end;
 
@@ -1134,14 +1153,14 @@ begin
 
     if (key_code= 1) then {ESC}
     begin
+      clear_keyboard_buffer;
       Draw_Pattern_View(false);
       Draw_Pattern_Editor(true);
-      clear_keyboard_buffer;
+      Mute_All;
       mainmenu := false;
       pedit  := true;
       pause := true;
-      Mute_All;
-      Draw_Pattern_Editor(true);
+      exit;
     end;
 
 
@@ -1160,15 +1179,18 @@ begin
            fillchar(p_msg,sizeof(p_msg),0);
            fillchar(msg_buffer,sizeof(msg_buffer),0);
            msg_size := 0;
+           Editor.curr_vol := 0;
+           Editor.octave := 4;
            Editor.d_tempo := 50; {Default tempo is 50 Hz}
            Editor.d_speed := 6; {and a speed of 6 = 125 BPM}
            Player.tempo := 50;
            Player.speed := 6;
-           set_timer(50);
-           Editor.curr_vol := 0;
-           Editor.octave := 4;
+           Player.row := 0;
+           Editor.markedrow := 0;
+           set_timer(Editor.d_tempo);
            Draw_Pattern_View(false);
            Draw_Pattern_Editor(true);
+           gotoxy(Editor.p_xp+4,14);
            pedit := true;
            mainmenu := false;
            Clear_Keypress;
@@ -1197,8 +1219,10 @@ begin
             Player.pattern_num := order[Player.Position];
             Player.row := 0;
             Editor.chan := 1;
+            Editor.markedrow := 0;
             Draw_Pattern_View(false);
             Draw_Pattern_Editor(true);
+            gotoxy(Editor.p_xp+4,14);
             pedit := true;
             mainmenu := false;
            end;
@@ -1242,8 +1266,10 @@ begin
             Player.pattern_num := order[Player.Position];
             Player.row := 0;
             Editor.chan := 1;
+            Editor.markedrow := 0;
             Draw_Pattern_View(false);
             Draw_Pattern_Editor(true);
+            gotoxy(Editor.p_xp+4,14);
             pedit := true;
             mainmenu := false;
            end;
@@ -1273,9 +1299,11 @@ begin
             Player.Position := 0;
             Player.pattern_num := order[Player.Position];
             Player.row := 0;
+            Editor.markedrow := 0;
             Editor.chan := 1;
             Draw_Pattern_View(false);
             Draw_Pattern_Editor(true);
+            gotoxy(Editor.p_xp+4,14);
             pedit := true;
             mainmenu := false;
            end;
@@ -1379,6 +1407,8 @@ begin
            	DrawMenu(active_menu);
            	cursor(false);
       	        viewbuffer(buffer.screen1);
+   	        gotoxy(Editor.p_xp+4,14);
+
                 mainmenu := true;
       	        pedit := false;
               end;
@@ -1402,7 +1432,17 @@ begin
              begin
                Clear_Keypress;
                Swap_Tracks_Menu;
-               Clear_Keypress;
+               Draw_Pattern_View(false);
+               Draw_Pattern_Editor(false);
+               DrawMenu(active_menu);
+               UnMark(Menu_pos[active_menu]+1,2+select,length(menu_text[active_menu][select]),15);
+               select := menu_size[active_menu];
+               Mark(Menu_pos[active_menu]+1,2+select,length(menu_text[active_menu][select]));
+               viewbuffer(buffer.screen1);
+               gotoxy(Editor.p_xp+4,14);
+               cursor(false);
+               mainmenu := true;
+      	       pedit := false;
              end;
 
 

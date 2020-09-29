@@ -1,25 +1,33 @@
 {$G-,N-,E-}
 
+{Todo:
+   - Menüs ausrichten
+   - Alles nochmal gründlich prüfen}
+
+
 {
  Tracker for TNDY and TLPT Tandy 3-Voice sound devices
- Version 1.1 - 09/22/20
+ Version 1.1 - 28/09/20
  by Jan Knipperts
 
- A tracker for the TI SN76496A sound generator chip. Written in Pascal and assembler code on a 80486 at 100 MHz.
- Dedicated to all lovers of old hardware. And of course to all who will still be writing programs for MS-DOS in 2020.
+ A tracker for the TI SN76496A sound generator chip.
 
  Changes to V. 1.0
   - Corrected a bug in TNDY unit. The TANDY_MuteVoice function didn't use LPT_Send....
-  - A big change to the keyboard interface. Now IRQ handled.
+  - Revised keyboard interface. Now IRQ handled.
   - Setting Speed to 1 is possible now (because of the new keyboard handler)
   - Cleaned up the code
   - Fixed a bug that occurs when saving an empty pattern
   - Improved menu handling
-  - Fixed some small bugs and glitches (cursor does not disappear right after leaving the description editor etc.)
-  - competely buffered screen output to reduce flicker
+  - Fixed some small bugs and glitches
+     - The cursor does not disappear or does not have the correct shape
+       if a submenu has previously used the cursor
+     - Pattern editor jumps to Row 0 after leaving the menu
+  - Revised buffering for screen output to avoid flickering
   - Added option to select clock freq. for AGI files
   - Added file loading via command line
   - Changed timer interrupt to 08h
+  - When editing the noise channel a specific info is now displayed
 }
 
 
@@ -44,7 +52,7 @@ var
      oldint08              : procedure;
 
 const
-     Edit_Play_Duration = 15;{How many ticks long should a note sound that was entered in the editor?}
+     Edit_Play_Duration = 15;{How many ticks should a note sound that was entered in the editor?}
 
 
 
@@ -120,9 +128,6 @@ begin
   If (Timing.clock_tick >= 1) then Timing.clock_tick := 0;
 
 end;
-
-
-
 
 
 
@@ -247,7 +252,7 @@ begin
    tandyport := $0C0;
    Editor.channels := 5;
    SND.Correct := true;
-   SND.Delay := 9;
+   SND.Delay := 18;
    SND.Tempo := 55;
    SND.Speed := 1;
    SND.ClockFreq := 1;
@@ -288,6 +293,7 @@ begin
   Editor.orderview := -2;
   Editor.octave := 4;
   Editor.chan := 1;
+  Editor.noisetype := 1;
   Player.position := 0;
   Player.row := 0;
   Editor.curr_vol := 0;
@@ -483,6 +489,7 @@ begin
 
   Draw_Pattern_View(false);
   Draw_Pattern_Editor(true);
+  gotoxy(Editor.p_xp+4,14);
 
   Clear_Keypress;
 
@@ -490,12 +497,13 @@ begin
     if pause then Handle_keyboard;
   until quit;
 
+  writeto(ptr(vidseg,0));
   clrscr;
+  writeln('Greetings to all members of DOSReloaded.de and Vogons.org. ');
+  writeln('Special thanks to Matze and Serge for their fantastic hardware projects and to');
+  writeln('everyone who helped me find annoying bugs and improve the tracker.');
+  writeln('');
   Cursor(true);
   Change_cursor(6,7);
-
   Save_configuration;
-
-  writeln('Greetings to Matze, Serge and Peter and all members of DOSReloaded.de');
-  writeln('');
 end.

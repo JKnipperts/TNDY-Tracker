@@ -96,9 +96,10 @@
  begin
     for c := x to x+(l-1) do
     begin
-      if VidSeg = $B800 then changeattr(c,y,atr(palette.text_color2,palette.mark_color,false))
+      if VidSeg = $B800 then
+        changeattr(c,y,atr(palette.text_color2,palette.mark_color,false))
       else
-      AttrMDA(c,y,true,false,true);
+        AttrMDA(c,y,true,false,true);
     end;
  end;
 
@@ -107,9 +108,10 @@
  begin
     for c := x to x+(l-1) do
     begin
-      if VidSeg = $B800 then changeattr(c,y,atr(col,palette.menu_color,false))
+      if VidSeg = $B800 then
+        changeattr(c,y,atr(col,palette.menu_color,false))
       else
-      AttrMDA(c,y,false,false,false);
+        AttrMDA(c,y,false,false,false);
     end;
  end;
 
@@ -387,6 +389,8 @@
    Clear_Keypress;
 end;
 
+
+
 {============ The menu to change default timing ==============}
 Procedure Timing_Config;
 var
@@ -403,8 +407,9 @@ begin
   centeredtext(7,palette.text_color1,palette.menu_color,'Default tempo (ticks per second):');
   centeredtext(10,palette.text_color1,palette.menu_color,'Default speed (ticks per row):');
 
-  centeredtext(8,palette.text_color2,palette.menu_color,addspace(2,round(Player.Tempo)));
-  centeredtext(11,palette.text_color2,palette.menu_color,addspace(2,Player.Speed));
+  fastwrite(39,8,palette.text_color2,palette.mark_color,addspace(100,round(Player.Tempo)));
+  fastwrite(40,11,palette.text_color2,palette.menu_color,addspace(10,Player.Speed));
+
   selected := 1;
 
   Clear_Keypress;
@@ -455,11 +460,19 @@ begin
     if (key_code= 78) or (key_code= 27) {+} or (key_code= 77) {down} then
     begin
      case selected of
-      1: if Player.Tempo < $E0 then inc(Player.Tempo);
-      2: if Player.Speed < $1F then inc(Player.Speed);
+      1: if Player.Tempo < $E0 then
+         begin
+           inc(Player.Tempo);
+           fastwrite(39,8,palette.text_color2,palette.mark_color,addspace(100,round(Player.Tempo)));
+         end;
+      2: if Player.Speed < $1F then
+         begin
+           inc(Player.Speed);
+           fastwrite(40,11,palette.text_color2,palette.mark_color,addspace(10,Player.Speed));
+         end;
      end;
-     centeredtext(8,palette.text_color2,palette.menu_color,addspace(2,round(Player.Tempo)));
-     centeredtext(11,palette.text_color2,palette.menu_color,addspace(2,Player.Speed));
+
+
      Clear_Keypress;
      ViewBuffer(buffer.screen2);
     end;
@@ -467,11 +480,18 @@ begin
     if (key_code= 53) or (key_code= 74) {-} or (key_code= 75) {up} then
     begin
       case selected of
-      1: if Player.Tempo > 18 then dec(Player.Tempo);
-      2: if Player.Speed > 1 then dec(Player.Speed);
+       1: if Player.Tempo > 18 then
+         begin
+           dec(Player.Tempo);
+           fastwrite(39,8,palette.text_color2,palette.mark_color,addspace(100,round(Player.Tempo)));
+         end;
+      2: if Player.Speed > 1 then
+         begin
+           dec(Player.Speed);
+           fastwrite(40,11,palette.text_color2,palette.mark_color,addspace(10,Player.Speed));
+         end;
+
      end;
-     centeredtext(8,palette.text_color2,palette.menu_color,addspace(2,round(Player.Tempo)));
-     centeredtext(11,palette.text_color2,palette.menu_color,addspace(2,Player.Speed));
      Clear_Keypress;
      ViewBuffer(buffer.screen2);
     end;
@@ -512,8 +532,8 @@ begin
     begin
      fillchar(buffer_event,sizeof(buffer_event),0);
      buffer_event := Patterns[pc]^[tc][to_track-1];
-     Patterns[pc]^[tc][to_track-1] := Patterns[pc]^[tc][from_track-1];
-     Patterns[pc]^[tc][from_track-1] := buffer_event;
+     Patterns[pc]^[tc][to_track] := Patterns[pc]^[tc][from_track];
+     Patterns[pc]^[tc][from_track] := buffer_event;
     end;
   end;
 end
@@ -522,9 +542,9 @@ begin
     for tc := 0 to 63 do
     begin
      fillchar(buffer_event,sizeof(buffer_event),0);
-     buffer_event := Patterns[Player.pattern_num]^[tc][to_track-1];
-     Patterns[Player.pattern_num]^[tc][to_track-1] := Patterns[Player.pattern_num]^[tc][from_track-1];
-     Patterns[Player.pattern_num]^[tc][from_track-1] := buffer_event;
+     buffer_event := Patterns[Player.pattern_num]^[tc][to_track];
+     Patterns[Player.pattern_num]^[tc][to_track] := Patterns[Player.pattern_num]^[tc][from_track];
+     Patterns[Player.pattern_num]^[tc][from_track] := buffer_event;
     end;
 end;
 
@@ -542,13 +562,21 @@ begin
   writeto(buffer.screen2);
   window(10,5,70,15,15,1,true);
   centeredtext(5,palette.text_color2,palette.menu_color,' Swap tracks  ');
-  centeredtext(7,palette.text_color1,palette.menu_color,'Swap track');
-  centeredtext(10,palette.text_color1,palette.menu_color,'with track');
+
+  if editor.channels = 5 then
+  begin
+    centeredtext(7,palette.text_color1,palette.menu_color,'Swap track (1..5)');
+    centeredtext(10,palette.text_color1,palette.menu_color,'with track (1..5)');
+  end
+  else
+  begin
+    centeredtext(7,palette.text_color1,palette.menu_color,'Swap track (1..4)');
+    centeredtext(10,palette.text_color1,palette.menu_color,'with track (1..4)');
+  end;
+
   centeredtext(13,palette.text_color1,palette.menu_color,'Pattern only   Whole Song');
   HLine(39,8,1,15,0,' ');
   HLine(39,11,1,15,0,' ');
-  ox := GetX;
-  oy := GetY;
   cursor(true);
   Change_cursor(6,7);
   gotoxy(39,8);
@@ -570,10 +598,10 @@ begin
       exit;
     end;
 
-  until ord(key_Ascii) in [$31..$35];
+  until (key_code) in [2..6];
 
   fastwrite(39,8,15,0,upcase(key_Ascii));
-  from_track := ord(key_Ascii)-$30;
+  from_track := key_code-2;
   viewbuffer(buffer.screen2);
   Clear_Keypress;
 
@@ -592,9 +620,9 @@ begin
       exit;
     end;
 
-  until ord(key_Ascii) in [$31..$35];
+  until (key_code) in [2..6];
   fastwrite(39,11,15,0,upcase(key_Ascii));
-  to_track := ord(key_Ascii)-$30;
+  to_track := key_code-2;
 
   cursor(false);
   mark(28,13,12);
@@ -638,10 +666,8 @@ begin
 
 
   Swap_tracks(from_track,to_track,song);
-
-  gotoxy(ox,oy);
-  cursor(false);
   Clear_Keypress;
+
   writeto(buffer.screen1);
   viewbuffer(buffer.screen1);
 end;
@@ -711,7 +737,6 @@ begin
         lpt := false;
        end;
        TANDY_Init;
-       TANDY_Mute_all;
        centeredtext(9,palette.menu_color,palette.menu_color,'Parallel port LPT'+hexn(tandyport)+' not found!');
        centeredtext(8,palette.text_color2,palette.mark_color,hexw(tandyport)+'h');
       end
@@ -725,12 +750,12 @@ begin
        else
        begin
         centeredtext(9,palette.menu_color,palette.menu_color,'Parallel port LPT'+hexn(tandyport)+' not found!');
-        TANDY_Mute_all;
        end;
       end;
 
       Clear_Keypress;
       mark(38,8,5);
+      TANDY_Mute_all;
       Viewbuffer(buffer.screen2);
    end;
 
@@ -767,6 +792,7 @@ begin
     end;
 
     mark(38,8,5);
+    TANDY_Mute_all;
     Clear_Keypress;
     Viewbuffer(buffer.screen2);
   end;
@@ -802,9 +828,9 @@ begin
 
   selected := 1;
   if SND.correct then
-    centeredtext(8,palette.text_color2,palette.menu_color,'ENABLED ')
+    centeredtext(8,palette.text_color2,palette.mark_color,'ENABLED ')
   else
-    centeredtext(8,palette.text_color2,palette.menu_color,'DISABLED');
+    centeredtext(8,palette.text_color2,palette.mark_color,'DISABLED');
 
   centeredtext(12,palette.text_color2,palette.menu_color,addspace(100,SND.Delay));
   centeredtext(14,palette.text_color2,palette.menu_color,addspace(100,SND.Tempo));
@@ -890,60 +916,92 @@ begin
     begin
      Clear_keypress;
      case selected of
-      1: if SND.correct = false then SND.correct := true else SND.correct := false;
-      2: if SND.Delay < 99 then inc(SND.Delay);
-      3: if SND.Tempo < 224 then inc(SND.Tempo);
-      4: if SND.Speed < 31 then inc(SND.Speed);
-      5: if SND.ClockFreq = 0 then
-       SND.ClockFreq := 1
-       else
-       SND.ClockFreq := 0;
+      1: begin
+           if SND.correct = false then
+             SND.correct := true
+           else
+             SND.correct := false;
+
+           if SND.correct then
+             centeredtext(8,palette.text_color2,palette.mark_color,'ENABLED ')
+           else
+             centeredtext(8,palette.text_color2,palette.mark_color,'DISABLED');
+         end;
+
+      2: begin
+           if SND.Delay < 99 then inc(SND.Delay);
+           centeredtext(12,palette.text_color2,palette.mark_color,addspace(100,SND.Delay));
+         end;
+
+      3: begin
+           if SND.Tempo < 224 then inc(SND.Tempo);
+           centeredtext(14,palette.text_color2,palette.mark_color,addspace(100,SND.Tempo));
+         end;
+
+      4: begin
+           if SND.Speed < 31 then inc(SND.Speed);
+           centeredtext(16,palette.text_color2,palette.mark_color,addspace(100,SND.Speed));
+         end;
+
+      5: begin
+           if SND.ClockFreq = 0 then
+           begin
+             SND.ClockFreq := 1;
+             centeredtext(18,palette.text_color2,palette.mark_color,' 99,320 Hz');
+           end
+          else
+           begin
+             SND.ClockFreq := 0;
+             centeredtext(18,palette.text_color2,palette.mark_color,'111,860 Hz');
+           end;
+         end;
      end;
-
-     if SND.correct then
-       centeredtext(8,palette.text_color2,palette.menu_color,'ENABLED ')
-     else
-       centeredtext(8,palette.text_color2,palette.menu_color,'DISABLED');
-
-     centeredtext(12,palette.text_color2,palette.menu_color,addspace(100,SND.Delay));
-     centeredtext(14,palette.text_color2,palette.menu_color,addspace(100,SND.Tempo));
-     centeredtext(16,palette.text_color2,palette.menu_color,addspace(100,SND.Speed));
-     If SND.ClockFreq = 1 then
-      centeredtext(18,palette.text_color2,palette.menu_color,' 99,320 Hz')
-     else
-      centeredtext(18,palette.text_color2,palette.menu_color,'111,860 Hz');
-
     end;
 
     if  (key_code= 53) or (key_code= 74) {-} or (key_code= 75) then
     begin
      Clear_keypress;
+      case selected of
+      1: begin
+           if SND.correct = false then
+             SND.correct := true
+           else
+             SND.correct := false;
 
-     case selected of
-      1: if SND.correct = false then SND.correct := true else SND.correct := false;
-      2: if SND.Delay > 0 then dec(SND.Delay);
-      3: if SND.Tempo > 18 then dec(SND.Tempo);
-      4: if SND.Speed > 1 then dec(SND.Speed);
-      5: if SND.ClockFreq = 0 then
-          SND.ClockFreq := 1
-         else
-          SND.ClockFreq := 0;
+           if SND.correct then
+             centeredtext(8,palette.text_color2,palette.mark_color,'ENABLED ')
+           else
+             centeredtext(8,palette.text_color2,palette.mark_color,'DISABLED');
+         end;
 
+      2: begin
+           if SND.Delay > 0 then dec(SND.Delay);
+           centeredtext(12,palette.text_color2,palette.mark_color,addspace(100,SND.Delay));
+         end;
+
+      3: begin
+           if SND.Tempo > 18 then dec(SND.Tempo);
+           centeredtext(14,palette.text_color2,palette.mark_color,addspace(100,SND.Tempo));
+         end;
+
+      4: begin
+           if SND.Speed > 1 then dec(SND.Speed);
+           centeredtext(16,palette.text_color2,palette.mark_color,addspace(100,SND.Speed));
+         end;
+
+      5: begin
+           if SND.ClockFreq = 0 then
+           begin
+             SND.ClockFreq := 1;
+             centeredtext(18,palette.text_color2,palette.mark_color,' 99,320 Hz');
+           end
+          else
+           begin
+             SND.ClockFreq := 0;
+             centeredtext(18,palette.text_color2,palette.mark_color,'111,860 Hz');
+           end;
+         end;
      end;
-
-
-     if SND.correct then
-       centeredtext(8,palette.text_color2,palette.menu_color,'ENABLED ')
-     else
-       centeredtext(8,palette.text_color2,palette.menu_color,'DISABLED');
-
-     centeredtext(12,palette.text_color2,palette.menu_color,addspace(100,SND.Delay));
-     centeredtext(14,palette.text_color2,palette.menu_color,addspace(100,SND.Tempo));
-     centeredtext(16,palette.text_color2,palette.menu_color,addspace(100,SND.Speed));
-     If SND.ClockFreq = 1 then
-      centeredtext(18,palette.text_color2,palette.menu_color,' 99,320 Hz')
-     else
-      centeredtext(18,palette.text_color2,palette.menu_color,'111,860 Hz');
 
    end;
 
@@ -972,17 +1030,17 @@ begin
   centeredtext(13,palette.text_color1,palette.menu_color,'Volume scaling:');
 
   case MODimp.ch4 of
-    1: centeredtext(8,palette.text_color2,palette.mark_color,'  Noise   ');
-    2: centeredtext(8,palette.text_color2,palette.mark_color,'PC-Speaker');
-    3: centeredtext(8,palette.text_color2,palette.mark_color,'   OFF    ');
+    1: fastwrite(36,8,palette.text_color2,palette.mark_color,'  Noise   ');
+    2: fastwrite(36,8,palette.text_color2,palette.mark_color,'PC-Speaker');
+    3: fastwrite(36,8,palette.text_color2,palette.mark_color,'   OFF    ');
   end;
 
-  centeredtext(10,palette.text_color2,palette.menu_color,addzero(10,MODimp.Tempo));
-  centeredtext(12,palette.text_color2,palette.menu_color,addzero(10,MODimp.Speed));
+  fastwrite(39,10,palette.text_color2,palette.menu_color,addspace(100,MODimp.Tempo));
+  fastwrite(40,12,palette.text_color2,palette.menu_color,addspace(10,MODimp.Speed));
 
   case MODimp.volscale of
     1: centeredtext(14,palette.text_color2,palette.menu_color,'  Direct   ');
-    2: centeredtext(14,palette.text_color2,palette.menu_color,'correct db ');
+    2: centeredtext(14,palette.text_color2,palette.menu_color,'  Decibel  ');
   end;
 
   selected := 1;
@@ -995,34 +1053,34 @@ begin
     case selected of
      1:
       begin
-       	mark(35,8,10);
-      	unmark(38,10,4,palette.text_color2);
-      	unmark(38,12,4,palette.text_color2);
-      	unmark(35,14,10,palette.text_color2);
+       	mark(35,8,12);
+      	unmark(38,10,5,palette.text_color2);
+      	unmark(39,12,4,palette.text_color2);
+      	unmark(35,14,11,palette.text_color2);
       end;
 
      2:
       begin
-       	unmark(35,8,10,palette.text_color2);
-      	mark(38,10,4);
-      	unmark(38,12,4,palette.text_color2);
-      	unmark(35,14,10,palette.text_color2);
+       	unmark(35,8,12,palette.text_color2);
+      	mark(38,10,5);
+      	unmark(39,12,4,palette.text_color2);
+      	unmark(35,14,11,palette.text_color2);
       end;
 
      3:
       begin
-      	unmark(35,8,10,palette.text_color2);
-      	unmark(38,10,4,palette.text_color2);
-      	mark(38,12,4);
-      	unmark(35,14,10,palette.text_color2);
+      	unmark(35,8,12,palette.text_color2);
+      	unmark(38,10,5,palette.text_color2);
+      	mark(39,12,4);
+      	unmark(35,14,11,palette.text_color2);
       end;
 
      4:
       begin
-      	unmark(35,8,10,palette.text_color2);
-      	unmark(38,10,4,palette.text_color2);
-      	unmark(38,12,4,palette.text_color2);
-      	mark(35,14,10);
+      	unmark(35,8,12,palette.text_color2);
+      	unmark(38,10,5,palette.text_color2);
+      	unmark(39,12,4,palette.text_color2);
+      	mark(35,14,11);
       end;
     end;
 
@@ -1045,25 +1103,33 @@ begin
     begin
       Clear_keypress;
       case selected of
-       1: if MODimp.ch4 < 3 then inc(MODimp.ch4) else MODimp.ch4 := 1;
-       2: if MODImp.Tempo < 99 then inc(MODimp.Tempo);
-       3: if MODImp.Speed < 99 then inc(MODimp.Speed);
-       4: if MODimp.volscale < 2 then inc(MODimp.volscale) else MODimp.volscale := 1;
-      end;
+       1: begin
+            if MODimp.ch4 < 3 then inc(MODimp.ch4) else MODimp.ch4 := 1;
+	    case MODimp.ch4 of
+       	     1: fastwrite(36,8,palette.text_color2,palette.mark_color,'  Noise   ');
+             2: fastwrite(36,8,palette.text_color2,palette.mark_color,'PC-Speaker');
+             3: fastwrite(36,8,palette.text_color2,palette.mark_color,'   OFF    ');
+            end;
+          end;
 
-      case MODimp.ch4 of
-       1: centeredtext(8,palette.text_color2,palette.menu_color,'  Noise   ');
-       2: centeredtext(8,palette.text_color2,palette.menu_color,'PC-Speaker');
-       3: centeredtext(8,palette.text_color2,palette.menu_color,'   OFF    ');
-      end;
+       2: begin
+            if MODImp.Tempo < 224 then inc(MODimp.Tempo);
+            fastwrite(39,10,palette.text_color2,palette.mark_color,addspace(100,MODimp.Tempo));
+          end;
 
-      case MODimp.volscale of
-       1: centeredtext(14,palette.text_color2,palette.menu_color,'  Direct   ');
-       2: centeredtext(14,palette.text_color2,palette.menu_color,'correct db ');
-      end;
+       3: begin
+            if MODImp.Speed < 31 then inc(MODimp.Speed);
+            fastwrite(40,12,palette.text_color2,palette.mark_color,addspace(10,MODimp.Speed));
+          end;
 
-      centeredtext(10,palette.text_color2,palette.menu_color,addzero(10,MODimp.Tempo));
-      centeredtext(12,palette.text_color2,palette.menu_color,addzero(10,MODimp.Speed));
+       4: begin
+            if MODimp.volscale < 2 then inc(MODimp.volscale) else MODimp.volscale := 1;
+            case MODimp.volscale of
+             1: centeredtext(14,palette.text_color2,palette.mark_color,'  Direct   ');
+             2: centeredtext(14,palette.text_color2,palette.mark_color,'  Decibel  ');
+            end;
+          end;
+      end;
     end;
 
 
@@ -1071,30 +1137,38 @@ begin
     if  (key_code= 53) or (key_code= 74) {-} or (key_code= 75) then
     begin
       Clear_keypress;
-      case selected of
-       1: if MODimp.ch4 > 1 then dec(MODimp.ch4) else MODimp.ch4 := 3;
-       2: if MODImp.Tempo > 18 then dec(MODimp.Tempo);
-       3: if MODImp.Speed > 1 then dec(MODimp.Speed);
-       4: if MODimp.volscale > 1 then dec(MODimp.volscale) else MODimp.volscale := 2;
-      end;
 
-      case MODimp.ch4 of
-       1: centeredtext(8,palette.text_color2,palette.menu_color,'  Noise   ');
-       2: centeredtext(8,palette.text_color2,palette.menu_color,'PC-Speaker');
-       3: centeredtext(8,palette.text_color2,palette.menu_color,'   OFF    ');
-      end;
+       case selected of
+       1: begin
+            if MODimp.ch4 > 1 then dec(MODimp.ch4) else MODimp.ch4 := 3;
+	    case MODimp.ch4 of
+       	     1: fastwrite(36,8,palette.text_color2,palette.mark_color,'  Noise   ');
+             2: fastwrite(36,8,palette.text_color2,palette.mark_color,'PC-Speaker');
+             3: fastwrite(36,8,palette.text_color2,palette.mark_color,'   OFF    ');
+            end;
+          end;
 
-      case MODimp.volscale of
-       1: centeredtext(14,palette.text_color2,palette.menu_color,'  Direct   ');
-       2: centeredtext(14,palette.text_color2,palette.menu_color,'correct db ');
-      end;
+       2: begin
+            if MODImp.Tempo > 18 then dec(MODimp.Tempo);
+            fastwrite(39,10,palette.text_color2,palette.mark_color,addspace(100,MODimp.Tempo));
+          end;
 
-      centeredtext(10,palette.text_color2,palette.menu_color,addzero(10,MODimp.Tempo));
-      centeredtext(12,palette.text_color2,palette.menu_color,addzero(10,MODimp.Speed));
+       3: begin
+            if MODImp.Speed > 1 then dec(MODimp.Speed);
+            fastwrite(40,12,palette.text_color2,palette.mark_color,addspace(10,MODimp.Speed));
+          end;
+
+       4: begin
+            if MODimp.volscale > 1 then dec(MODimp.volscale) else MODimp.volscale := 2;
+            case MODimp.volscale of
+             1: centeredtext(14,palette.text_color2,palette.mark_color,'  Direct   ');
+             2: centeredtext(14,palette.text_color2,palette.mark_color,'  Decibel  ');
+            end;
+          end;
+      end;
     end;
-
-
       viewbuffer(buffer.screen2);
+
 
   until (key_code= 27) or (key_code= 1);
   Clear_Keypress;

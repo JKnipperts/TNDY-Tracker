@@ -5,7 +5,7 @@
 
  Author: Jan Knipperts
  Program: TNDY-Tracker
- Version: 1.1
+ Version: 1.11
 
 ***************************************************************
 }
@@ -18,8 +18,9 @@ interface
 
 type
  TimerType = record
-  Frequency  : Real;
-  Divider    : word;
+  Frequency     : Real;
+  Divider       : word;
+  Clock_counter : Real;
 end;
 
 var
@@ -146,6 +147,8 @@ begin
 
   Program_PIT($34,Timer.divider);
   EnableTimerIRQ;
+
+  Timer.Clock_Counter := round(Timer.Frequency / 18.2065);
 end;
 
 
