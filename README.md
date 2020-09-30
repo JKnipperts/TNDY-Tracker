@@ -15,4 +15,4 @@ I plan to support MIDI and VGM file formats in the future.
 This project is actively developed by me and therefore I will update the source code here regularly.
 Current release is version 1.0.
 Version 1.1 is almost finished and will be released soon.
-The source code here is the current work status for version 1.1
+The source code here is the current work status for version 1.1.
