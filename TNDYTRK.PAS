@@ -2,7 +2,7 @@
 
 {
  Tracker for TNDY and TLPT Tandy 3-Voice sound devices
- Version 1.1 - 28/09/20
+ Version 1.1 - 30/09/20
  by Jan Knipperts
 
  A tracker for the TI SN76496A sound generator chip.
@@ -23,6 +23,7 @@
   - Added file loading via command line
   - Changed timer interrupt to 08h
   - When editing the noise channel a specific info is now displayed
+  - Added support for new version of Serdaco's TNDLPT
 }
 
 
