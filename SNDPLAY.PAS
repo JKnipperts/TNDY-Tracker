@@ -1,4 +1,9 @@
 {$G-,N-,E-}
+{Simple player to play Sierra AGI music ressources (SND files)
+ on TNDY and TNDLPT devices.
+ by Jan Knipperts 
+ 
+ Version 1.1 }
 
 Program PlaySND;
 uses dos,tndy,pit,keyboard,textmode;
