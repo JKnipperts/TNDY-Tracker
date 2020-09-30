@@ -1370,8 +1370,8 @@ begin
            fillchar(Player.tsl,sizeof(Player.tsl),0);
            fillchar(Player.onote,sizeof(Player.onote),0);
            fillchar(Player.ooct,sizeof(Player.ooct),0);
-           fillchar(volume,sizeof(volume),15);
-           fillchar(freq,sizeof(freq),0);
+           fillchar(TANDY.volume,sizeof(TANDY.volume),15);
+           fillchar(TANDY.freq,sizeof(TANDY.freq),0);
            move(buffer.oldscreen^,buffer.screen1^,4000);
            viewbuffer(buffer.screen1);
            mainmenu := false;

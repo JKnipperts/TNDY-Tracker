@@ -1,9 +1,4 @@
 {$G-,N-,E-}
-{Simple player to play Sierra AGI music ressources (SND files)
- on TNDY and TNDLPT devices.
- by Jan Knipperts 
- 
- Version 1.1 }
 
 Program PlaySND;
 uses dos,tndy,pit,keyboard,textmode;
@@ -89,7 +84,7 @@ type
    if noteHi = 0 then
     Tone_to_Freq := 0
    else
-    Tone_to_Freq := round(111860 / frequency);
+    Tone_to_Freq := round(99320 / frequency); {Alternative: 111860}
  end;
 
 
@@ -165,15 +160,15 @@ type
     halt(1);
    end;
 
-   LPT := false;
+   TLPT.LPT := false;
 
   if (paramcount = 2) then
   begin
-   if findoption(2,'0C0') or findoption(2,'C0') then TandyPort := $0C0;
-   if findoption(2,'0E0') or findoption(2,'E0') then TandyPort := $0C0;
-   if findoption(2,'1E0') then TandyPort := $1E0;
-   if findoption(2,'205') then TandyPort := $205;
-   if findoption(2,'2C0') then TandyPort := $2C0;
+   if findoption(2,'0C0') or findoption(2,'C0') then Tandy.IOPort := $0C0;
+   if findoption(2,'0E0') or findoption(2,'E0') then TANDY.IOPort := $0C0;
+   if findoption(2,'1E0') then TANDY.IOPort := $1E0;
+   if findoption(2,'205') then TANDY.IOPort := $205;
+   if findoption(2,'2C0') then TANDY.IOPort := $2C0;
 
    if findoption(2,'LPT1') then
    begin
@@ -206,7 +201,7 @@ type
 
   end
   else
-   TandyPort := $0C0;
+   TANDY.IOPort := $0C0;
 
    TANDY_Mute_All;
 
@@ -268,10 +263,10 @@ type
    OldExitProc := ExitProc; {Save the old and install the}
    ExitProc := @Save_Exit;  {new exit procedure}
    write('Playing '+uppercase(paramstr(1))+' on port ');
-   if lpt then
-    writeln('LPT'+hexn(tandyport))
+   if TLPT.lpt then
+    writeln('LPT'+hexn(TANDY.IOPort))
    else
-    writeln(hexw(tandyport)+'h');
+    writeln(hexw(TANDY.IOPort)+'h');
 
    writeln('Press +/- to adjust speed or ESC to quit');
 
@@ -316,7 +311,7 @@ type
           end;
 
           gotoxy(1,y+2+i);
-          writeln(' Channel'+addspace(10,i)+': '+addspace(10000,freq[i])+
+          writeln(' Channel'+addspace(10,i)+': '+addspace(10000,Tandy.freq[i])+
                   ' Hz, Attenuation: '+addspace(10,Channel[i].Attenuation)+
                   ', Duration: '+addspace(10000,Channel[i].duration)+' ticks');
 

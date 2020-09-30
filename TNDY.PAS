@@ -1,31 +1,36 @@
-{$G-,N-,E-}
+{Unit to interfere with TLPT nd TNDY Tandy-3-voice sound devices
+Version 1.2 -TNDY -
+- Modified version for TNDY-Tracker -
 
-{**************************************************************
- TNDY.PAS
- Unit to interfere with TLPT nd TNDY Tandy-3-voice sound devices
- Version 1.11 -TNDY - 20.09.2020 by Jan Knipperts
- - Modified version for TNDY-Tracker -
+30.09.2020 by Jan Knipperts
 
- Author: Jan Knipperts
- Program: TNDY-Tracker
+Some cleanup and added support for new version of TNDYLPT}
 
-***************************************************************
-}
-
-
-{Added compiler directives for compiling TNDY Tracker}
 
 Unit TNDY;
 interface
+uses misc;
 
-var
-     tandyport    : word;
-     data,
-     status,
-     ctrl         : word;
-     LPT          : Boolean;
+type
+     LPT_ports    = record
+       data,
+       status,
+       ctrl,
+       ecr        : word;
+       LPT        : Boolean;
+     end;
+
+    TNDY_Globals  = record
+     IOPort       : word;
      volume       : array[0..3] of byte;
      freq         : array[0..3] of word;
+    end;
+
+
+var
+     TANDY        : TNDY_Globals;
+     TLPT         : LPT_ports;
+
 
 const
     tandyFreq      = 3579545;
@@ -44,7 +49,6 @@ Procedure TNDY_Sound(voice:byte; frequency :word; level:byte);
 Procedure TNDY_Noise(divider, feedback, level:byte);
 Procedure TNDY_Mute;
 
-Procedure TANDY_Init;
 Procedure TANDY_PlaySound(voice:byte; tone:word; level:byte);
 Procedure TANDY_Noise(divider, feedback, level:byte);
 Procedure TANDY_MuteVoice(voice : byte);
@@ -52,46 +56,35 @@ Procedure TANDY_Mute_all;
 
 implementation
 
-Procedure XDelay(ms:word);
-assembler;
-asm
-  mov ax,1000
-  mul ms
-  mov cx,dx
-  mov dx,ax
-  mov ah,86h
-  int 15h
-end;
-
-
-
 Procedure LPT_Send(b : byte);
 assembler;
  asm
   mov al,b
-  mov dx,data
+  mov dx,TLPT.data
   out dx,al
 
-  mov al,12
-  mov dx,ctrl
+  mov al,$0C
+  mov dx,TLPT.ctrl
   out dx,al
 
-  mov dx,status
+  mov dx,TLPT.status
   mov cx,$18
 
   @@1:
   in al,dx
   test al,$40
   loopnz @@1
+  cmp cx,0
+  je  @Timeout
 
-  inc cx
-
+  mov cx,$18
   @@2:
   in al,dx
   test al,$40
-  loopnz @@2
+  loopz @@2
 
-  mov dx,ctrl
+  @Timeout:
+  mov dx,TLPT.ctrl
   mov al,9
   out dx,al
 end;
@@ -138,7 +131,7 @@ end;
 Procedure TNDY_Mute;
 assembler;
  asm
-  mov dx,TandyPort
+  mov dx,Tandy.IOPort
   mov al,$9F
   out dx,al
   mov al,$BF
@@ -153,30 +146,56 @@ assembler;
 
 Function TLPT_Init(LPTnum : byte) : Boolean;
 begin
- tandyport := LPTnum;
- data := memw[$40:6+LPTnum*2];
+ TANDY.IOport := LPTnum;
+    TLPT.data := memw[$40:6+LPTnum*2];
 
- if data = 0 then
+ if TLPT.data = 0 then
  begin
-  lpt := false;
-  status := 0;
-  ctrl := 0;
+  TLPT.lpt    := false;
+  TLPT.status := 0;
+  TLPT.ctrl   := 0;
+  TLPT.ecr    := 0;
  end
  else
  begin
-  lpt := true;
-  status := data + 1;
-  ctrl := data + 2;
+  TLPT.lpt    := true;
+  TLPT.status := TLPT.data + 1;
+  TLPT.ctrl   := TLPT.data + 2;
+  TLPT.ecr    := TLPT.data + $402;
 
-  asm                      {Unlock new version o LPT plug}
-  mov dx,ctrl
-  mov al,$E5
-  out dx,al
+  asm
+   mov dx,TLPT.ctrl
+   xor al,al
+   out dx,al
+   mov dx,TLPT.ecr
+   in  al,dx
+   and al,3
+   cmp al,1        {Is ECR enabled?}
+   jne  @No_ECR
+   xor al,al       {then disable it}
+   out dx,al
+
+   @No_ECR:
   end;
-  xdelay(150);             {wait least 150 ms}
+
+  TLPT_Mute;
+
+  asm
+   mov dx,TLPT.ctrl
+   mov al,07
+   out dx,al
+  end;
+  xdelay(200);             {wait}
+  asm
+   mov dx,TLPT.ctrl
+   mov al,09
+   out dx,al
+  end;
+  xdelay(200);             {wait}
+
  end;
 
- TLPT_Init := lpt;
+ TLPT_Init := TLPT.lpt;
 end;
 
 procedure TNDY_Sound(voice:byte; frequency :word; level:byte);
@@ -186,7 +205,7 @@ begin
    begin
       tone := tandyIntDivider div frequency;
       asm
-	mov  dx,TandyPort
+	mov  dx,Tandy.IOPort
 	mov  cl,voice
 	mov  al,$10
 	shl  al,cl
@@ -215,7 +234,7 @@ procedure TNDY_Noise(divider, feedback, level:byte); assembler;
 asm
         mov  ax,bx
 
-        mov  dx,TandyPort
+        mov  dx,Tandy.IOPort
         xor  al,al
         mov  al,11100000b
         cmp feedback,0
@@ -241,18 +260,18 @@ begin
    if level > 15 then level := 15;
    if voice > 2 then voice := 2;
 
-   if lpt then
+   if TLPT.lpt then
     TLPT_Sound(voice,tone,level)
    else
     TNDY_Sound(voice,tone,level);
 
-   freq[voice] := tone;
+   TANDY.Freq[voice] := tone;
   end;
 end;
 
 Procedure TANDY_Noise(divider, feedback, level:byte);
 begin
-  if lpt then
+  if TLPT.lpt then
   begin
    TLPT_Noise(divider, feedback, level);
   end
@@ -266,7 +285,7 @@ end;
 
 Procedure TANDY_Mute_all;
 begin
- if lpt then
+ if TLPT.lpt then
  begin
    TLPT_Mute;
  end
@@ -274,47 +293,19 @@ begin
  begin
    TNDY_Mute;
  end;
- fillchar(freq,sizeof(freq),0);
- fillchar(volume,sizeof(volume),15);
+ fillchar(TANDY.Freq,sizeof(TANDY.Freq),0);
+ fillchar(TANDY.Volume,sizeof(TANDY.Volume),15);
 end;
 
 Procedure TANDY_MuteVoice(voice : byte);
 begin
-
- if not LPT then
-  port[Tandyport] := $9F + (voice * $20)
- else
-  LPT_Send($9F + (voice * $20));
-
- freq[voice] := 0;
- volume[voice] := 15;
-end;
-
-
-
-Procedure TANDY_Init;      {Reset the sound chip}
-begin
-  if lpt then
-  begin
-    LPT_Send(1);
-    xdelay(10);
-    LPT_Send(9);
-    xdelay(10);
-  end
-  else
-  begin
-    port[TandyPort] := 1;
-    xdelay(10);
-    port[TandyPort] := 9;
-    xdelay(10);
-  end;
-  TANDY_Mute_ALL;
-  xdelay(100);
-  TANDY_Mute_ALL;
+ port[Tandy.IOport] := $9F + (voice * $20);
+ Tandy.Freq[voice] := 0;
+ Tandy.volume[voice] := 15;
 end;
 
 
 begin
- fillchar(volume,sizeof(volume),15);
- fillchar(freq,sizeof(freq),0);
+ fillchar(TANDY.Freq,sizeof(TANDY.Freq),0);
+ fillchar(TANDY.Volume,sizeof(TANDY.Volume),15);
 end.

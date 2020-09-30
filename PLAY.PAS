@@ -146,7 +146,7 @@ begin
  if (voice = 3) and (Editor.channels = 5) then {xtra channel}
  begin
   SpkSound(tone);
-  freq[voice] := tone;
+  TANDY.Freq[voice] := tone;
  end
  else
  begin
@@ -168,8 +168,8 @@ begin
   TANDY_MuteVoice(voice);
  end;
 
- volume[voice] := 15;
- freq[voice] := 0;
+ TANDY.volume[voice] := 15;
+ TANDY.freq[voice] := 0;
 end;
 
 {============ Mute all channels ==============}
@@ -188,7 +188,7 @@ Procedure Slidevolume_up(chan, slidespeed : byte);
 var
  vol  : integer;
 begin
-       vol := volume[chan];
+       vol := TANDY.volume[chan];
        dec(vol, slidespeed);
 
        if vol < 0 then
@@ -196,21 +196,21 @@ begin
          vol := 0;
        end;
 
-       Volume[chan] := vol;
+       TANDY.Volume[chan] := vol;
 
        if (chan = 3) and (Editor.channels = 5) then {xtra channel}
        begin
         {Not supported by now}
        end
        else
-        PlayVoice(chan,freq[chan],volume[chan]);
+        PlayVoice(chan,TANDY.freq[chan],TANDY.volume[chan]);
 end;
 
 Procedure Slidevolume_down(chan, slidespeed : byte);
 var vol  : integer;
 
 begin
-       vol := Volume[chan];
+       vol := TANDY.Volume[chan];
        inc(vol,slidespeed);
 
        if vol > $F then
@@ -218,14 +218,14 @@ begin
          vol := $F;
        end;
 
-       Volume[chan] := vol;
+       TANDY.Volume[chan] := vol;
 
        if (chan = 3) and (Editor.channels = 5) then {xtra channel}
        begin
         {Not supported by now}
        end
        else
-        PlayVoice(chan,freq[chan],volume[chan]);
+        PlayVoice(chan,TANDY.freq[chan],TANDY.volume[chan]);
 end;
 
 
@@ -236,18 +236,18 @@ Procedure Portamento_up(chan, portaspeed : byte; limit : word);
 var  freqdum : word;
 begin
 
- if (freq[chan] > 0) and (Player.muted[chan] = false) then
+ if (TANDY.freq[chan] > 0) and (Player.muted[chan] = false) then
  begin
-  freqdum := Freq[chan];
+  freqdum := TANDY.Freq[chan];
 
   If ((freqdum+portaspeed) < limit) then
   begin
     inc(freqdum,portaspeed);
-    PlayVoice(chan,word(freqdum),volume[chan]);
+    PlayVoice(chan,word(freqdum),TANDY.volume[chan]);
   end
   else
   begin
-    PlayVoice(chan,limit,volume[chan]);
+    PlayVoice(chan,limit,TANDY.volume[chan]);
   end;
 
  end;
@@ -260,18 +260,18 @@ Procedure Portamento_down(chan,Portaspeed : byte; limit : word);
 var freqdum : integer;
  begin
 
- if (freq[chan] > 0) and (Player.muted[chan] = false) then
+ if (TANDY.freq[chan] > 0) and (Player.muted[chan] = false) then
  begin
-  freqdum := Freq[chan];
+  freqdum := TANDY.Freq[chan];
 
   If ((freqdum-Portaspeed) > limit) then
   begin
     dec(freqdum,Player.speed);
-    PlayVoice(chan,word(freqdum),volume[chan]);
+    PlayVoice(chan,word(freqdum),TANDY.volume[chan]);
   end
   else
   begin
-    PlayVoice(chan,limit,volume[chan]);
+    PlayVoice(chan,limit,TANDY.volume[chan]);
   end;
  end;
 
@@ -283,10 +283,10 @@ Procedure Toneslide(chan,slidespeed : byte; ToN : word);
 var slidefreq : integer;
 begin
 
-if (freq[chan] > 0) and (Player.muted[chan] = false) then
+if (TANDY.freq[chan] > 0) and (Player.muted[chan] = false) then
 begin
 
- slidefreq := freq[chan];
+ slidefreq := TANDY.freq[chan];
 
 if (slidefreq < ToN) then
 begin
@@ -312,7 +312,7 @@ begin
   slidefreq := ToN;
 end;
 
-  PlayVoice(chan,word(slidefreq),volume[chan]);
+  PlayVoice(chan,word(slidefreq),TANDY.volume[chan]);
 end;
 
 end;
@@ -344,7 +344,7 @@ if Player.arp[chan].cnt = 0 then
 begin
  doc := Player.arp[chan].oc;
  dn := Player.arp[chan].on;
- PlayVoice(chan,note_to_freq(dn,doc),volume[chan]); {spiele Note 0}
+ PlayVoice(chan,note_to_freq(dn,doc),TANDY.volume[chan]); {spiele Note 0}
 end;
 
 if Player.arp[chan].cnt = 1 then
@@ -357,7 +357,7 @@ begin
   doc := doc + 1;
   if dn = 0 then dn := 1;
  end;
- PlayVoice(chan,note_to_freq(dn,doc),volume[chan]); {spiele Note 1}
+ PlayVoice(chan,note_to_freq(dn,doc),TANDY.volume[chan]); {spiele Note 1}
 end;
 
 if Player.arp[chan].cnt = 2 then
@@ -370,7 +370,7 @@ begin
   doc := doc + 1;
   if dn = 0 then dn := 1;
  end;
- PlayVoice(chan,note_to_freq(dn,doc),volume[chan]); {spiele Note 2}
+ PlayVoice(chan,note_to_freq(dn,doc),TANDY.volume[chan]); {spiele Note 2}
 end;
 
  inc(Player.arp[chan].cnt);
@@ -445,7 +445,7 @@ begin
           if (patterns[Player.pattern_num]^[rownr][channr].ep and $F0 > 0 ) and
             (patterns[Player.pattern_num]^[rownr][channr].ep and $0F = 0) then
           begin
-            vol := volume[channr];
+            vol := TANDY.volume[channr];
             dec(vol, patterns[Player.pattern_num]^[rownr][channr].ep shr 4);
 
             if vol < 0 then
@@ -453,13 +453,13 @@ begin
               vol := 0;
             end;
 
-           Volume[channr] := vol;
+           TANDY.Volume[channr] := vol;
           end;
 
           if (patterns[Player.pattern_num]^[rownr][channr].ep and $0F > 0 ) and
             (patterns[Player.pattern_num]^[rownr][channr].ep and $F0 = 0) then
           begin
-           vol := Volume[channr];
+           vol := TANDY.Volume[channr];
            inc(vol,patterns[Player.pattern_num]^[rownr][channr].ep and $0F);
 
            if vol > $0F then
@@ -467,7 +467,7 @@ begin
              vol := $0F;
            end;
 
-           Volume[channr] := vol;
+           TANDY.Volume[channr] := vol;
           end;
 
           toneslide(channr,Player.tsl[channr].speed,Player.tsl[channr].limit);
@@ -557,18 +557,18 @@ begin
 
        if patterns[Player.pattern_num]^[rn][chan].volume > 0 then
        begin
-         Volume[chan] := patterns[Player.pattern_num]^[rn][chan].volume-1;
-         if Volume[chan] > 15 then Volume[chan] := 15;
+         TANDY.Volume[chan] := patterns[Player.pattern_num]^[rn][chan].volume-1;
+         if TANDY.Volume[chan] > 15 then TANDY.Volume[chan] := 15;
 
          if on = 0 then {Neue Lautstärke, aber keine neue Note}
          begin
             if (chan = Editor.channels-1) then
              begin
-                TANDY_Noise(Player.onote[chan],Player.ooct[chan],volume[chan]);
+                TANDY_Noise(Player.onote[chan],Player.ooct[chan],TANDY.volume[chan]);
              end
             else
              begin
-               PlayVoice(chan,Freq[chan],volume[chan]);
+               PlayVoice(chan,TANDY.Freq[chan],TANDY.volume[chan]);
              end;
          end;
        end;
@@ -600,7 +600,7 @@ begin
 
              end;
 
-              if chan < Editor.channels-1 then PlayVoice(chan,pitch,volume[chan]);
+              if chan < Editor.channels-1 then PlayVoice(chan,pitch,TANDY.volume[chan]);
           end;
 
         end
@@ -614,8 +614,8 @@ begin
         if on = 13 then {key off}
         begin
          MuteVoice(chan);
-         volume[chan] := 15;
-         freq[chan] := 0;
+         TANDY.volume[chan] := 15;
+         TANDY.freq[chan] := 0;
         end;
 
 
@@ -653,14 +653,14 @@ begin
 
                 end;
 
-                PlayVoice(chan,pitch,volume[chan]);
+                PlayVoice(chan,pitch,TANDY.volume[chan]);
                 Player.onote[chan] := on;                            {Sichern fr Effekte}
                 Player.ooct[chan]  := oc;
 
               end
               else
               begin
-               TANDY_Noise(on,oc,volume[chan]);
+               TANDY_Noise(on,oc,TANDY.volume[chan]);
               end;
 
            end;  {else}

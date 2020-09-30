@@ -69,8 +69,8 @@ begin
    fillchar(Player.tsl,sizeof(Player.tsl),0);
    fillchar(Player.onote,sizeof(Player.onote),0);
    fillchar(Player.ooct,sizeof(Player.ooct),0);
-   fillchar(volume,sizeof(volume),0);
-   fillchar(freq,sizeof(freq),0);
+   fillchar(TANDY.volume,sizeof(TANDY.volume),15);
+   fillchar(TANDY.freq,sizeof(TANDY.freq),0);
    new(patterns[0]);
    fillchar(patterns[0]^,sizeof(TNDYPattern),0);
 end;

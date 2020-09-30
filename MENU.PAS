@@ -6,7 +6,8 @@
 
  Author: Jan Knipperts
  Program: TNDY-Tracker
- Version: 1.11
+ Version: 1.12
+  - support for new TNDYLPT
 
 ***************************************************************
 }
@@ -687,22 +688,22 @@ begin
   centeredtext(7,palette.text_color1,palette.menu_color,'I/O Port for TNDY or TNDLPT:');
   centeredtext(14,palette.text_color1,palette.menu_color,'Use arrow keys or +/- to select port.');
 
-  if tandyport > 3 then {I/O Port for TNDY card}
+  if TANDY.IOport > 3 then {I/O Port for TNDY card}
   begin
     centeredtext(9,palette.menu_color,palette.menu_color,
-                   'Parallel port LPT'+hexn(tandyport)+' not found!'); {clear this message}
-    centeredtext(8,palette.text_color2,palette.mark_color,hexw(tandyport)+'h');
+                   'Parallel port LPT'+hexn(TANDY.IOport)+' not found!'); {clear this message}
+    centeredtext(8,palette.text_color2,palette.mark_color,hexw(TANDY.IOport)+'h');
   end
   else
   begin                 {Parallel Port}
-    centeredtext(8,palette.text_color2,palette.mark_color,'LPT'+hexn(tandyport)+' ');
-    if not TLPT_Init(tandyport) then
+    centeredtext(8,palette.text_color2,palette.mark_color,'LPT'+hexn(TANDY.IOport)+' ');
+    if not TLPT_Init(TANDY.IOport) then
     begin
-      centeredtext(9,palette.text_color2,palette.menu_color,'Parallel port LPT'+hexn(tandyport)+' not found!');
+      centeredtext(9,palette.text_color2,palette.menu_color,'Parallel port LPT'+hexn(TANDY.IOport)+' not found!');
     end
     else
     begin
-      centeredtext(9,palette.menu_color,palette.menu_color,'Parallel port LPT'+hexn(tandyport)+' not found!');
+      centeredtext(9,palette.menu_color,palette.menu_color,'Parallel port LPT'+hexn(TANDY.IOport)+' not found!');
     end;
  end;
 
@@ -718,38 +719,38 @@ begin
 
    if (key_code= 77) {right} or (key_code= 72) {up} or (key_code= 78) or (key_code= 27) {+} then
    begin
-      case tandyport of
-       $0C0: tandyport := $0E0;
-       $0E0: tandyport := $1E0;
-       $1E0: tandyport := $2C0;
-       $2C0: tandyport := $2E0;
-       $2E0: tandyport := 1;
-       1: tandyport := 2;
-       2: tandyport := 3;
-       3: tandyport := $0C0;
+      case TANDY.IOport of
+       $0C0: TANDY.IOport := $0E0;
+       $0E0: TANDY.IOport := $1E0;
+       $1E0: TANDY.IOport := $2C0;
+       $2C0: TANDY.IOport := $2E0;
+       $2E0: TANDY.IOport := 1;
+       1: TANDY.IOport := 2;
+       2: TANDY.IOport := 3;
+       3: TANDY.IOport := $0C0;
       end;
 
-      if tandyport > 3 then
+      if TANDY.IOport > 3 then
       begin
-       if lpt then
+       if TLPT.lpt then
        begin
         TLPT_Mute;
-        lpt := false;
+        TLPT.lpt := false;
        end;
-       TANDY_Init;
-       centeredtext(9,palette.menu_color,palette.menu_color,'Parallel port LPT'+hexn(tandyport)+' not found!');
-       centeredtext(8,palette.text_color2,palette.mark_color,hexw(tandyport)+'h');
+       TANDY_Mute_all;
+       centeredtext(9,palette.menu_color,palette.menu_color,'Parallel port LPT'+hexn(TANDY.IOport)+' not found!');
+       centeredtext(8,palette.text_color2,palette.mark_color,hexw(TANDY.IOport)+'h');
       end
       else
       begin
-       centeredtext(8,palette.text_color2,palette.mark_color,'LPT'+hexn(tandyport)+' ');
-       if not TLPT_Init(tandyport) then
+       centeredtext(8,palette.text_color2,palette.mark_color,'LPT'+hexn(TANDY.IOport)+' ');
+       if not TLPT_Init(TANDY.IOport) then
        begin
-        centeredtext(9,palette.text_color2,palette.menu_color,'Parallel port LPT'+hexn(tandyport)+' not found!');
+        centeredtext(9,palette.text_color2,palette.menu_color,'Parallel port LPT'+hexn(TANDY.IOport)+' not found!');
        end
        else
        begin
-        centeredtext(9,palette.menu_color,palette.menu_color,'Parallel port LPT'+hexn(tandyport)+' not found!');
+        centeredtext(9,palette.menu_color,palette.menu_color,'Parallel port LPT'+hexn(TANDY.IOport)+' not found!');
        end;
       end;
 
@@ -761,33 +762,33 @@ begin
 
   if (key_code= 75) {left} or (key_code= 80) {down} or  (key_code= 53) or (key_code= 74) {-}  then
   begin
-    case tandyport of
-     3: tandyport := 2;
-     2: tandyport := 1;
-     1: tandyport := $2E0;
-     $2E0: tandyport := $2C0;
-     $2C0: tandyport := $1E0;
-     $1E0: tandyport := $0E0;
-     $0E0: tandyport := $0C0;
-     $0C0: tandyport := 3;
+    case TANDY.IOport of
+     3: TANDY.IOport := 2;
+     2: TANDY.IOport := 1;
+     1: TANDY.IOport := $2E0;
+     $2E0: TANDY.IOport := $2C0;
+     $2C0: TANDY.IOport := $1E0;
+     $1E0: TANDY.IOport := $0E0;
+     $0E0: TANDY.IOport := $0C0;
+     $0C0: TANDY.IOport := 3;
     end;
 
 
-    if tandyport > 3 then
+    if TANDY.IOport > 3 then
     begin
-      centeredtext(9,palette.menu_color,palette.menu_color,'Parallel port LPT'+hexn(tandyport)+' not found!');
-      centeredtext(8,palette.text_color2,palette.mark_color,hexw(tandyport)+'h');
+      centeredtext(9,palette.menu_color,palette.menu_color,'Parallel port LPT'+hexn(TANDY.IOport)+' not found!');
+      centeredtext(8,palette.text_color2,palette.mark_color,hexw(TANDY.IOport)+'h');
     end
     else
     begin
-      centeredtext(8,palette.text_color2,palette.mark_color,'LPT'+hexn(tandyport)+' ');
-      if not TLPT_Init(tandyport) then
+      centeredtext(8,palette.text_color2,palette.mark_color,'LPT'+hexn(TANDY.IOport)+' ');
+      if not TLPT_Init(TANDY.IOport) then
       begin
-        centeredtext(9,palette.text_color2,palette.menu_color,'Parallel port LPT'+hexn(tandyport)+' not found!');
+        centeredtext(9,palette.text_color2,palette.menu_color,'Parallel port LPT'+hexn(TANDY.IOport)+' not found!');
       end
       else
       begin
-        centeredtext(9,palette.menu_color,palette.menu_color,'Parallel port LPT'+hexn(tandyport)+' not found!');
+        centeredtext(9,palette.menu_color,palette.menu_color,'Parallel port LPT'+hexn(TANDY.IOport)+' not found!');
       end;
     end;
 

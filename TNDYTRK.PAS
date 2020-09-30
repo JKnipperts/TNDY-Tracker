@@ -244,7 +244,7 @@ end;
 
 Procedure Set_default_config;
 begin
-   tandyport := $0C0;
+   TANDY.IOport := $0C0;
    Editor.channels := 5;
    SND.Correct := true;
    SND.Delay := 18;
@@ -264,15 +264,15 @@ end;
 Procedure Initialization;
 begin
 
-  lpt := false;
+  TLPT.lpt := false;
 
-  if tandyport <= 3 then    {Init TNDLPT if selected}
+  if TANDY.IOport <= 3 then    {Init TNDLPT if selected}
   begin
-    lpt := true;
-    if not TLPT_Init(tandyport) then
+    TLPT.lpt := true;
+    if not TLPT_Init(TANDY.IOport) then
     begin
-      tandyport := $0C0;
-      lpt := false;
+      TANDY.IOport := $0C0;
+      TLPT.lpt := false;
     end;
   end;
 
@@ -405,7 +405,7 @@ begin
     {$I-}
     assign(f,'TNDYTRK.CFG');                       {Yes? Then read it...}
     reset(f,1);
-     blockread(f,tandyport,sizeof(tandyport));
+     blockread(f,TANDY.IOport,sizeof(TANDY.IOport));
      blockread(f,Editor.channels,sizeof(Editor.channels));
      blockread(f,SND,sizeof(SND));
      blockread(f,MODimp,sizeof(MODimp));
@@ -428,7 +428,7 @@ begin
   {$I-}
   assign(f,'TNDYTRK.CFG'); {save actual configuration}
   rewrite(f,1);
-   blockwrite(f,tandyport,sizeof(tandyport));
+   blockwrite(f,TANDY.IOport,sizeof(TANDY.IOport));
    blockwrite(f,Editor.channels,sizeof(Editor.channels));
    blockwrite(f,SND,sizeof(SND));
    blockwrite(f,MODimp,sizeof(MODimp));
