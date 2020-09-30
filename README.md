@@ -3,7 +3,7 @@ A music tracker for the TI SN76496A sound generator chip.
 Perfect for Matze79's TNDY and Serdaco's TNDLPT sound devices, but I try to make the tracker work on a real Tandy or PCjr if possible. 
 Later versions will also support CMS/Game Blaster as an additional output option.
 
-![Alt text](https://github.com/JKnipperts/TNDY-Tracker/blob/master/tndytrk.png raw=true "Tracker in action")
+![The tracker in action] (https://github.com/JKnipperts/TNDY-Tracker/blob/master/tndytrk.png)
 
 ## Some features:
 - Import of Amiga MOD files (pattern data)
