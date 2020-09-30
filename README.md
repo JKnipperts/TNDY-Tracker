@@ -3,6 +3,8 @@ A music tracker for the TI SN76496A sound generator chip.
 Perfect for Matze79's TNDY and Serdaco's TNDLPT sound devices, but I try to make the tracker work on a real Tandy or PCjr if possible. 
 Later versions will also support CMS/Game Blaster as an additional output option.
 
+The tracker was written for Borland Pascal 7.0, but with a few modifications it should compile with Freepascal as well.
+
 ## Some features:
 - Import of Amiga MOD files (pattern data)
 - Import of Tandy/PCjr music from early Sierra AGI games (Kings Quest etc.).
