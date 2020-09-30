@@ -1,7 +1,7 @@
 {$G-,N-,E-}
 
 Program PlaySND;
-uses dos,tndy,pit,keyboard;
+uses dos,tndy,pit,keyboard,textmode;
 
 const
  title  : string = 'Sierra SND file player v1.1 by Jan Knipperts';
@@ -32,6 +32,8 @@ type
    Endpos       : array[0..3] of word;
    Ended        : array[0..3] of boolean;
    i,i1         : byte;
+
+   x,y		: byte;
 
    OldExitProc  : Pointer;
 
@@ -132,7 +134,8 @@ type
  procedure Save_Exit; Far;
  begin
   done_irq;			{Set original interrupt}
-  Tandy_Mute_All;			{Mute all sound output}
+  Tandy_Mute_All;	        {Mute all sound output}
+  cursor(true);		        {display cursor}
   ExitProc := OldExitProc;	{And now run the original exit proc}
  end;
 
@@ -142,9 +145,10 @@ type
 
 
  begin
+   clrscr;
    writeln(title);
    writeln(title2);
-   writeln;
+   writeln('');
 
    if (paramcount = 0) or (paramcount > 2) then
    begin
@@ -152,7 +156,7 @@ type
     writeln('Valid ports are C0, E0, 1E0, 205, 2C0 (for TNDY)');
     writeln('or LPT1,LPT2,LPT3 (for TNDLPT)');
     writeln('If no port is specified, C0 is used.');
-    writeln;
+    writeln('');
     halt(1);
    end;
 
@@ -171,7 +175,7 @@ type
      if not TLPT_Init(1) then
      begin
       writeln('ERROR: Parallel port LPT1 does not respond.');
-      writeln;
+      writeln('');
       halt(1);
      end;
    end;
@@ -180,7 +184,7 @@ type
      if not TLPT_Init(2) then
      begin
       writeln('ERROR: Parallel port LPT2 does not respond.');
-      writeln;
+      writeln('');
       halt(1);
      end;
    end;
@@ -189,7 +193,7 @@ type
      if not TLPT_Init(3) then
      begin
       writeln('ERROR: Parallel port LPT3 does not respond.');
-      writeln;
+      writeln('');
       halt(1);
      end;
    end;
@@ -209,14 +213,14 @@ type
     If IOResult <> 0 then
     begin
      writeln('File not found!');
-     writeln;
+     writeln('');
      halt(1);
     end;
 
     if filesize(f) < sizeof(header) then
     begin
      writeln('File is corrupted or no Sierra AGI game music!');
-     writeln;
+     writeln('');
      halt(1);
     end;
 
@@ -227,7 +231,7 @@ type
     If IOResult <> 0 then
     begin
      writeln('Disk read error!');
-     writeln;
+     writeln('');
      halt(1);
     end;
 
@@ -250,7 +254,7 @@ type
        (posi[3] > filesize(f)) then
     begin
      writeln('File is corrupted or no Sierra AGI game music!');
-     writeln;
+     writeln('');
      halt(1);
     end;
 
@@ -258,9 +262,17 @@ type
    init_irq;
    OldExitProc := ExitProc; {Save the old and install the}
    ExitProc := @Save_Exit;  {new exit procedure}
-   writeln('Playing ',uppercase(paramstr(1)),'  Press +/- to adjust speed or ESC to quit');
+   write('Playing '+uppercase(paramstr(1))+' on port ');
+   if lpt then
+    writeln('LPT'+hexn(tandyport))
+   else
+    writeln(hexw(tandyport)+'h');
 
+   writeln('Press +/- to adjust speed or ESC to quit');
 
+   y := GetY;
+   writeln('Timer: '+addspace(100,rate)+' Hz');
+   cursor(false);
    repeat;
 
 
@@ -280,7 +292,7 @@ type
           If IOResult <> 0 then
           begin
             writeln('Disk read error!');
-            writeln;
+            writeln('');
             halt(1);
           end;
 
@@ -297,6 +309,12 @@ type
             {Bits 0 and 1 hold the freq. divider, bit 2 is the noise type (1 = white noise, 0 = periodic noise)}
             TANDY_Noise(Channel[i].Freq2 or $FC,Channel[i].Freq2 shr 2, Channel[i].Attenuation)
           end;
+
+          gotoxy(1,y+2+i);
+          writeln(' Channel'+addspace(10,i)+': '+addspace(10000,freq[i])+
+                  ' Hz, Attenuation: '+addspace(10,Channel[i].Attenuation)+
+                  ', Duration: '+addspace(10000,Channel[i].duration)+' ticks');
+
 
         end;  {Duration = 0}
 
@@ -336,7 +354,8 @@ type
         begin
          inc(rate);
          set_timer(rate); {Reset timer to new frequency}
-         writeln('Timer is at ',rate,' Hz. One delay is ',1000 div rate,' milliseconds');
+         gotoxy(1,y);
+         writeln('Timer: '+addspace(100,rate)+' Hz');
         end;
         Clear_keypress;
       end;
@@ -347,9 +366,20 @@ type
         begin
          dec(rate);
          set_timer(rate); {Reset timer to new frequency}
-         writeln('Timer is at ',rate,' Hz. One delay is ',1000 div rate,' milliseconds');
+         gotoxy(1,y);
+         writeln('Timer: '+addspace(100,rate)+' Hz');
         end;
         Clear_keypress;
+      end;
+
+      if key_code = 1 then {ESC}
+      begin
+       gotoxy(1,y+6);
+       writeln('');
+       Clear_keypress;
+       close(f);
+       TANDY_Mute_all;
+       halt(0);
       end;
     end;
 
@@ -357,10 +387,11 @@ type
 
 
 
-
-    until (key_code = 1) or
-          ((Ended[0] = true) and (Ended[1] = true) and (Ended[2] = true) and (Ended[3] = true));
-
+    until ((Ended[0] = true) and (Ended[1] = true) and (Ended[2] = true) and (Ended[3] = true));
+    gotoxy(1,y+6);
+    writeln('');
+    writeln('Song ended');
+    writeln('');
     close(f);
     TANDY_Mute_all;
  end.
