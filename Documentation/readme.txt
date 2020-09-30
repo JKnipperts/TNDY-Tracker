@@ -25,7 +25,7 @@ With Enter you enter the Order Editor and can edit the order of the patterns (on
 Press ESC to enter the menu where you can navigate through the options using the arrow keys.
 
 First you should navigate to the config item and select the correct port for your sound chip under "Output Device".
-Hier können zudem die Import-Optionen eingestellt werden:
+Hier kÃ¶nnen zudem die Import-Optionen eingestellt werden:
 
 TNDY Tracker can read the music of Sierra AGI games from the 1980s (SND).
 Converting the timing of these SND files to a tracker format is a bit tricky, so you can also set it in Config.
