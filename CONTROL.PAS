@@ -6,7 +6,8 @@
 
  Author: Jan Knipperts
  Program: TNDY-Tracker
- Version: 1.1
+ Version: 1.11
+ - small bug fixes
 
 ***************************************************************
 }
@@ -249,6 +250,8 @@ begin
         59..63:			{F1 to F5 Mute/Unmute channel}
         begin
 
+         if key_code-59 <= Editor.channels then
+         begin
           if Player.muted[key_code-59] = true then
             Player.muted[key_code-59] := false
           else
@@ -258,6 +261,7 @@ begin
           end;
 
           UpdatePatternView(Editor.MarkedRow-8,false);
+         end;
           Clear_keyboard_buffer;
         end;
 
@@ -1445,22 +1449,26 @@ begin
                 Clear_Keypress;
                 if Editor.channels = 4 then
            	begin
-           	 Swap_Tracks(4,5,true);
-           	 Editor.channels := 5
+           	 Move_tracks(3,4,true);
+           	 Editor.channels := 5;
            	end
             	else
             	begin
-            	 Swap_Tracks(5,4,true);
-            	 Editor.channels := 4;
+            	 Move_tracks(4,3,true);
+    	         Editor.channels := 4;
             	end;
 
                 Mute_All;
+                move(buffer.oldscreen^,buffer.screen1^,4000);
            	Draw_Pattern_View(false);
            	Draw_Pattern_Editor(false);
+                move(buffer.screen1^,buffer.oldscreen^,4000);
            	DrawMenu(active_menu);
            	cursor(false);
       	        viewbuffer(buffer.screen1);
    	        gotoxy(Editor.p_xp+4,14);
+                Editor.chan := 1;
+                noteedit := true;
 
                 mainmenu := true;
       	        pedit := false;
@@ -1493,6 +1501,8 @@ begin
                Mark(Menu_pos[active_menu]+1,2+select,length(menu_text[active_menu][select]));
                viewbuffer(buffer.screen1);
                gotoxy(Editor.p_xp+4,14);
+               Editor.chan := 1;
+               noteedit := true;
                cursor(false);
                mainmenu := true;
       	       pedit := false;

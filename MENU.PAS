@@ -6,8 +6,9 @@
 
  Author: Jan Knipperts
  Program: TNDY-Tracker
- Version: 1.12
+ Version: 1.13
   - support for new TNDYLPT
+  - Updated message editor to new format
 
 ***************************************************************
 }
@@ -27,6 +28,7 @@
  Procedure Edit_Message;
  Procedure Timing_Config;
  Procedure Swap_Tracks(from_track, to_track : byte; whole_song : boolean);
+ Procedure Move_Tracks(from_track, to_track : byte; whole_song : boolean);
  Procedure Swap_Tracks_Menu;
  Procedure Output_Config;
  Procedure SND_Import_Config;
@@ -225,7 +227,8 @@
    repeat
      if is_key_pressed then Get_Key;
 
-     if (ord(key_Ascii) > $20)  then
+     if (ord(key_Ascii) > $20) and
+        (ord(key_Ascii) < $FF)  then
      begin
 
          if (posi < 400) then
@@ -515,31 +518,67 @@ end;
 
 {============ swap tracks ==============}
 
+Procedure Move_Tracks(from_track, to_track : byte; whole_song : boolean);
+var pc,tc : byte;
+   buffer_event : TNDYevent;
+begin
+
+  if (Editor.channels = 4) and ((to_track = 4) or (from_track = 4)) then
+  begin
+   Editor.channels := 5;
+  end;
+
+  if whole_song then
+  begin
+    for pc := 0 to Player.MaxPattern do
+    begin
+      for tc := 0 to 63 do
+      begin
+        fillchar(buffer_event,sizeof(buffer_event),0);
+        Patterns[pc]^[tc][to_track] := Patterns[pc]^[tc][from_track];
+        Patterns[pc]^[tc][from_track] := buffer_event;
+      end;
+    end;
+  end
+  else
+  begin
+    for tc := 0 to 63 do
+    begin
+     fillchar(buffer_event,sizeof(buffer_event),0);
+     Patterns[Player.pattern_num]^[tc][to_track] := Patterns[Player.pattern_num]^[tc][from_track];
+     Patterns[Player.pattern_num]^[tc][from_track] := buffer_event;
+    end;
+  end;
+
+
+end;
+
+
 Procedure Swap_Tracks(from_track, to_track : byte; whole_song : boolean);
 var pc,tc : byte;
    buffer_event : TNDYevent;
 begin
 
-  if (Editor.channels = 4) and (to_track = 5) then
+  if (Editor.channels = 4) and ((to_track = 4) or (from_track = 4)) then
   begin
    Editor.channels := 5;
   end;
 
-if whole_song then
-begin
-  for pc := 0 to Player.MaxPattern do
+  if whole_song then
   begin
-    for tc := 0 to 63 do
+    for pc := 0 to Player.MaxPattern do
     begin
-     fillchar(buffer_event,sizeof(buffer_event),0);
-     buffer_event := Patterns[pc]^[tc][to_track-1];
-     Patterns[pc]^[tc][to_track] := Patterns[pc]^[tc][from_track];
-     Patterns[pc]^[tc][from_track] := buffer_event;
+      for tc := 0 to 63 do
+      begin
+        fillchar(buffer_event,sizeof(buffer_event),0);
+        buffer_event := Patterns[pc]^[tc][to_track-1];
+        Patterns[pc]^[tc][to_track] := Patterns[pc]^[tc][from_track];
+        Patterns[pc]^[tc][from_track] := buffer_event;
+      end;
     end;
-  end;
-end
-else
-begin
+  end
+  else
+  begin
     for tc := 0 to 63 do
     begin
      fillchar(buffer_event,sizeof(buffer_event),0);
@@ -547,7 +586,7 @@ begin
      Patterns[Player.pattern_num]^[tc][to_track] := Patterns[Player.pattern_num]^[tc][from_track];
      Patterns[Player.pattern_num]^[tc][from_track] := buffer_event;
     end;
-end;
+  end;
 
 
 end;
@@ -599,7 +638,7 @@ begin
       exit;
     end;
 
-  until (key_code) in [2..6];
+  until (key_code >= 2) and (key_code <= editor.channels+1);
 
   fastwrite(39,8,15,0,upcase(key_Ascii));
   from_track := key_code-2;
@@ -621,7 +660,7 @@ begin
       exit;
     end;
 
-  until (key_code) in [2..6];
+  until (key_code >= 2) and (key_code <= editor.channels+1);
   fastwrite(39,11,15,0,upcase(key_Ascii));
   to_track := key_code-2;
 

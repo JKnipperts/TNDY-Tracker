@@ -299,7 +299,11 @@ end;
 
 Procedure TANDY_MuteVoice(voice : byte);
 begin
- port[Tandy.IOport] := $9F + (voice * $20);
+ if TLPT.lpt then
+   LPT_Send($9F + (voice * $20))
+ else
+   port[Tandy.IOport] := $9F + (voice * $20);
+
  Tandy.Freq[voice] := 0;
  Tandy.volume[voice] := 15;
 end;

@@ -45,7 +45,7 @@ const
   'Shift-Tab          = Jump to previous track                ',
   'Backspace          = Delete previous note                  ',
   'Del                = Delete note at cursor                 ',
-  'Shift+Del	      = Delete pattern                        ',
+  'Shift+Del          = Delete pattern                        ',
   'Strg+p             = Clear current pattern                 ',
   'Strg+t             = Clear current track                   ',
   'Ins                = Insert space at cursor position       ',
