@@ -73,6 +73,7 @@ begin
     Player.pattern_num := order[Player.Position];
     UpdatePatternView(Editor.MarkedRow-8,true);
     Clear_Keypress;
+
   end;
 
   if (key_code= 77) {Right} then
@@ -572,47 +573,89 @@ begin
 
        83: {Delete}
        begin
-         if noteedit = true then
+         if (L_Shift_State = false) and (R_Shift_State = false) then
          begin
-           Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].note := 0;    {If cursor is on the note column..}
-           Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].octave := 0;  {clear note and octave}
-           Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].volume := 0;
-         end
-         else
-         begin
-           if (Editor.chan < Editor.channels) then
+           if noteedit = true then
            begin
-             if getX = (editor.p_xp+8)+((Editor.chan-1)*11) then                 {if it's on the volume column...}
-               Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].volume := 0      {just clear the volume}
-             else
-             begin
-              {if it's on the effect or parameter column clear both}
-               Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].effect := 0;
-               Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].ep := 0;
-             end;
+             Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].note := 0;    {If cursor is on the note column..}
+             Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].octave := 0;  {clear note and octave}
+             Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].volume := 0;
            end
            else
            begin
-            {is this the volume of the noise channel just clear the volume}
-             if (getX = (editor.p_xp+10)+((Editor.chan-1)*11)) and (Editor.chan = Editor.channels) then
-               Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].volume := 0
+             if (Editor.chan < Editor.channels) then
+             begin
+               if getX = (editor.p_xp+8)+((Editor.chan-1)*11) then                 {if it's on the volume column...}
+                Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].volume := 0      {just clear the volume}
+               else
+               begin
+                 {if it's on the effect or parameter column clear both}
+                 Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].effect := 0;
+                 Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].ep := 0;
+               end;
+             end
              else
              begin
-              {if not, clear note,octave and volume = freq, noise type and volume here}
-               Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].note := 0;
-               Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].octave := 0;
-               Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].volume := 0;
+               {is this the volume of the noise channel just clear the volume}
+               if (getX = (editor.p_xp+10)+((Editor.chan-1)*11)) and (Editor.chan = Editor.channels) then
+                Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].volume := 0
+               else
+               begin
+                 {if not, clear note,octave and volume = freq, noise type and volume here}
+                  Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].note := 0;
+                  Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].octave := 0;
+                  Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].volume := 0;
+               end;
              end;
            end;
+
+           if Editor.MarkedRow = 63 then {if something has been changend on the last row, jump to row 0}
+           begin
+             Editor.MarkedRow := 0;
+           end;
+
+           UpdatePatternView(Editor.MarkedRow-8,false);		{Display the updated pattern}
+
+         end
+         else
+         begin  {Shift+Delete = Delete Pattern}
+           fillchar(patterns[Player.pattern_num]^,sizeof(TNDYPattern),0); {Clear data in memory}
+
+           if Player.maxpattern > 0 then
+           begin
+             if Player.pattern_num < Player.maxpattern then
+             begin
+               dispose(patterns[Player.pattern_num]); {Free memory}
+               for z := Player.pattern_num to player.maxpattern-1 do
+               begin
+                 Patterns[z] := Patterns[z+1];
+               end;
+               Patterns[player.maxpattern] := nil;
+             end
+             else
+             begin
+              dispose(patterns[Player.pattern_num]); {Free memory}
+              dec(Player.pattern_num);
+             end;
+
+             dec(player.maxpattern);
+             fastwrite(72,5,palette.text_color2,palette.window_color,hexb(Player.pattern_num)+'/'+hexb(Player.MaxPattern));
+
+
+
+             for z := 0 to Player.songlength do       {update oder list}
+             begin
+               if order[z] > Player.pattern_num then dec(order[z]);
+             end;
+           end;
+
+            Player.row := 0;
+            Editor.Markedrow := 0;
+            Editor.chan := 1;
+            UpdatePatternOrder(false);
+            UpdatePatternView(Editor.MarkedRow-8,false);
          end;
 
-
-         if Editor.MarkedRow = 63 then {if something has been changend on the last row, jump to row 0}
-         begin
-           Editor.MarkedRow := 0;
-         end;
-
-         UpdatePatternView(Editor.MarkedRow-8,false);		{Display the updated pattern}
        end;
 
 
@@ -1175,19 +1218,29 @@ begin
           1:       {New}
           begin
            Mute_All;
-           Clear_Pattern_Data;
-           fillchar(p_msg,sizeof(p_msg),0);
+           Clear_Pattern_Data; {Erase patterns from memory}
+
+           fillchar(p_msg,sizeof(p_msg),0);  {Clear song description/message}
            fillchar(msg_buffer,sizeof(msg_buffer),0);
            msg_size := 0;
-           Editor.curr_vol := 0;
-           Editor.octave := 4;
+
+           fillchar(editor,sizeof(editor),0); {clear all editor data}
+           fillchar(player,sizeof(player),0); {clear all player data}
+
+           {set default values}
            Editor.d_tempo := 50; {Default tempo is 50 Hz}
-           Editor.d_speed := 6; {and a speed of 6 = 125 BPM}
-           Player.tempo := 50;
+           Editor.d_speed := 6; {Default speed 6 = 125 BPM}
            Player.speed := 6;
-           Player.row := 0;
-           Editor.markedrow := 0;
-           set_timer(Editor.d_tempo);
+           Player.tempo := 50;
+           set_timer(50);
+
+           Editor.orderview := -2;
+           Editor.octave := 4;
+           Editor.chan := 1;
+           Editor.Channels := 4;
+           Editor.noisetype := 1;
+           Player.songlength := 1;
+
            Draw_Pattern_View(false);
            Draw_Pattern_Editor(true);
            gotoxy(Editor.p_xp+4,14);

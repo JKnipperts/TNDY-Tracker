@@ -2,28 +2,40 @@
 
 {
  Tracker for TNDY and TLPT Tandy 3-Voice sound devices
- Version 1.1 - 30/09/20
+ Version 1.1 - 05/10/20
  by Jan Knipperts
 
  A tracker for the TI SN76496A sound generator chip.
 
  Changes to V. 1.0
-  - Corrected a bug in TNDY unit. The TANDY_MuteVoice function didn't use LPT_Send....
-  - Revised keyboard interface. Now IRQ handled.
-  - Setting Speed to 1 is possible now (because of the new keyboard handler)
-  - Cleaned up the code
-  - Fixed a bug that occurs when saving an empty pattern
-  - Improved menu handling
-  - Fixed some small bugs and glitches
-     - The cursor does not disappear or does not have the correct shape
-       if a submenu has previously used the cursor
-     - Pattern editor jumps to Row 0 after leaving the menu
-  - Revised buffering for screen output to avoid flickering
-  - Added option to select clock freq. for AGI files
+  - Changed timer interrupt from 1Ch to 08h and optimized the code of the
+    IRQ handler (No more runtimeerror!)
   - Added file loading via command line
-  - Changed timer interrupt to 08h
-  - When editing the noise channel a specific info is now displayed
-  - Added support for new version of Serdaco's TNDLPT
+  - Corrected a nasty bug in TNDY unit
+  - Added support for newer version of Serdaco's TNDLPT.
+  - Revised buffering for screen output to avoid flickering
+  - Completely revised the keyboard interface. Now it is handled by IRQ.
+  - Setting Speed to 1 is possible now (because of the new keyboard handler).
+  - Fixed a bug that occured when saving an empty pattern
+  - Improved the menu handling a bit
+  - Fixed some small bugs and glitches
+     - The cursor did not disappear or had a wrong shape
+       under certain circumstances.
+     - The pattern editor always jumped to row 0 when leaving a menu.
+       Now you can continue working where you left off.
+     - Some submenus were a bit misaligned.
+  - Added "delete pattern" funcitonality (shift+delete)
+  - Added an option to select clock divider for AGI files. Some old player code
+    I found uses 99320 Hz instead of the 111860 Hz of the Tandy for frequency
+    calculation. And actually some SNDs sound a bit more coherent with that.
+  - Replaced the frequency calculation routine with a lookup table, because it took too much time
+    to calculate freqs on slow CPUs
+  - When editing the noise channel a specific info is now displayed.
+    Instead of the octave (that is not used on this channel) now the noise type is shown.
+  - Improved the TNDY file format a tiny bit.
+  - Improved volume slide effect (thanks to FreddyV / Vogons).
+  - A lot of cleaning up and optimizing the code
+  - Many minor improvements
 }
 
 
@@ -48,7 +60,7 @@ var
      oldint08              : procedure;
 
 const
-     Edit_Play_Duration = 15;{How many ticks should a note sound that was entered in the editor?}
+     Edit_Play_Duration = 15; {How many ticks should a note sound that was entered in the editor?}
 
 
 
@@ -85,7 +97,7 @@ begin
       UpdateFx(Player.row);
     end;
 
-    key_code:= port[$60];         {We have to check the keyboard here this way}
+    key_code := port[$60];         {We have to check the keyboard here this way}
 
     if key_code in [1,57,59..64,78,74] then
     begin
@@ -455,19 +467,30 @@ end;
 begin
   Check_Commandline;
   Read_Configuration;
-  Initialization;
 
   Clear_Pattern_Data;
+  Initialization;
 
-  if pos('.TND',uppercase(paramstr(1))) > 0 then
-  {Was a filename with ".TND" extension passed as parameter?}
+
+  if (pos('.TND',uppercase(paramstr(1))) > 0) or
+     (pos('.SND',uppercase(paramstr(1))) > 0) or
+     (pos('.MOD',uppercase(paramstr(1))) > 0) then
   begin
     move(buffer.blankscreen^,buffer.screen2^,4000);
     writeto(buffer.screen2);
     window(16,7,64,12,Palette.text_color1,Palette.menu_color,true);
     centeredtext(9,Palette.text_color1,Palette.menu_color,'Please wait...');
     viewbuffer(buffer.screen2);
-    LoadTNDY(paramstr(1));  {Try to load it...}
+
+    if (pos('.TND',uppercase(paramstr(1))) > 0) then
+    LoadTNDY(paramstr(1));
+
+    if (pos('.SND',uppercase(paramstr(1))) > 0) then
+    Import_SND(paramstr(1));
+
+    if (pos('.MOD',uppercase(paramstr(1))) > 0) then
+    Import_MOD(paramstr(1));
+
     Proceed_Errors;
     writeto(buffer.screen1);
     viewbuffer(buffer.screen1);

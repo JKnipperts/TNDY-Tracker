@@ -5,7 +5,9 @@
 
  Author: Jan Knipperts
  Program: TNDY-Tracker
- Version: 1.11
+ Version: 1.12
+  - Changed frequency calculation
+  - Fixed tone slide
 
 ***************************************************************
 }
@@ -16,7 +18,7 @@ interface
 uses global,tndy,tracker,PIT;
 
 function  Note_to_Freq(note,octave : Byte) : Word;
-Procedure Freq_to_Note(f : real;var  n,o : byte);
+Procedure Freq_to_Note(f : word;var  n,o : byte);
 Function  Tone_to_Freq(noteHi, noteLo : byte) : word;
 
 
@@ -35,6 +37,25 @@ procedure SpkNoSound;
 
 implementation
 
+
+const
+
+ {Note (version 1.12):
+  I've replaced the frequency calculation with a lookup table,
+  because it took too much time to calculate freqs on slow CPUs}
+
+Note_frequencies : array[2..9] of array[1..12] of word = (
+   {C    C#     D    D#     E     F    F#     G    G#     A    A#    B}
+(   65,   69,   73,   78,   82,   87,   92,   98,  104,  110,  117,  123), {Octave 2...}
+(  131,  139,  147,  156,  165,  175,  185,  196,  208,  220,  233,  247),
+(  262,  277,  294,  311,  330,  349,  370,  392,  415,  440,  466,  494),
+(  523,  554,  587,  622,  659,  698,  740,  784,  831,  880,  932,  988),
+( 1047, 1109, 1175, 1245, 1319, 1397, 1480, 1568, 1661, 1760, 1865, 1976),
+( 2093, 2217, 2349, 2489, 2637, 2794, 2960, 3136, 3322, 3520, 3729, 3951),
+( 4186, 4435, 4699, 4978, 5274, 5588, 5920, 6272, 6645, 7040, 7459, 7902),
+( 8372, 8870, 9397, 9956,10548,11175,11840,12544,13290,14080,14917,15804)); {...Octave 9}
+
+
 {============ Frequency calculation ==============}
  function Power(base,exponent : real) : real;
  begin
@@ -50,14 +71,25 @@ implementation
 function Note_to_Freq(note,octave : Byte) : Word;
   var	r : real;
 begin
-  r := ((octave*12)+note) - 58; {58 = A4 (440 Hz)}
-  r := Power(2,(r/12));
-  Note_to_Freq := round(440*r);
+
+  if (octave < 2) or (octave > 9) then    {Only unusual frequencies will be calculated}
+  begin
+    r := ((octave*12)+note) - 58; {58 = A4 (440 Hz)}
+    r := Power(2,(r/12));
+    Note_to_Freq := round(440*r);
+  end
+  else
+  {All others are looked up in the table to relieve the CPU}
+   Note_to_Freq := Note_frequencies[octave,note];
+
+
+
 end;
 
 
- Procedure Freq_to_Note(f : real;var  n,o : byte);
+ Procedure Freq_to_Note(f : word;var  n,o : byte);
  var r,A4,C0 : real;
+
  begin
   if f > 0 then
   begin
@@ -181,56 +213,6 @@ end;
 
 
 
-
-
-{============ Volume slide ==============}
-Procedure Slidevolume_up(chan, slidespeed : byte);
-var
- vol  : integer;
-begin
-       vol := TANDY.volume[chan];
-       dec(vol, slidespeed);
-
-       if vol < 0 then
-       begin
-         vol := 0;
-       end;
-
-       TANDY.Volume[chan] := vol;
-
-       if (chan = 3) and (Editor.channels = 5) then {xtra channel}
-       begin
-        {Not supported by now}
-       end
-       else
-        PlayVoice(chan,TANDY.freq[chan],TANDY.volume[chan]);
-end;
-
-Procedure Slidevolume_down(chan, slidespeed : byte);
-var vol  : integer;
-
-begin
-       vol := TANDY.Volume[chan];
-       inc(vol,slidespeed);
-
-       if vol > $F then
-       begin
-         vol := $F;
-       end;
-
-       TANDY.Volume[chan] := vol;
-
-       if (chan = 3) and (Editor.channels = 5) then {xtra channel}
-       begin
-        {Not supported by now}
-       end
-       else
-        PlayVoice(chan,TANDY.freq[chan],TANDY.volume[chan]);
-end;
-
-
-
-
 {============ Portamento ==============}
 Procedure Portamento_up(chan, portaspeed : byte; limit : word);
 var  freqdum : word;
@@ -319,6 +301,115 @@ end;
 
 
 
+
+{============ Volume slide ==============}
+Procedure Slidevolume_up(chan, slidespeed : byte);
+begin
+    if (TANDY.freq[chan] > 0) and (Player.muted[chan] = false) then
+    begin
+
+       if (Player.vsl[chan] = 0) then Player.vsl[chan] := TANDY.volume[chan];
+
+       Player.vsl[chan] := Player.vsl[chan] - (slidespeed * 0.23); {experimental!}
+
+       if Player.vsl[chan] < 0 then
+       begin
+         Player.vsl[chan] := 0;
+       end;
+
+
+
+       if (chan = 3) and (Editor.channels = 5) then {xtra channel}
+       begin
+        {Not supported by now}
+       end
+       else
+       begin
+        TANDY.volume[chan] := round(Player.vsl[chan]);
+        PlayVoice(chan,TANDY.freq[chan],TANDY.volume[chan]);
+       end;
+
+    end;
+end;
+
+Procedure Slidevolume_down(chan, slidespeed : byte);
+begin
+    if (TANDY.freq[chan] > 0) and (Player.muted[chan] = false) then
+    begin
+       if (Player.vsl[chan] = 0) then Player.vsl[chan] := TANDY.volume[chan];
+
+       Player.vsl[chan] := Player.vsl[chan] + (slidespeed * 0.23); {experimental!}
+
+       if Player.vsl[chan] > $F then
+       begin
+         Player.vsl[chan] := $F;
+       end;
+
+       if (chan = 3) and (Editor.channels = 5) then {xtra channel}
+       begin
+        {Not supported by now}
+       end
+       else
+       begin
+        TANDY.volume[chan] := round(Player.vsl[chan]);
+        PlayVoice(chan,TANDY.freq[chan],TANDY.volume[chan]);
+       end;
+    end;
+end;
+
+
+
+
+Procedure toneslide_and_volume_up(chan, slidespeed : byte);
+begin
+    if (TANDY.freq[chan] > 0) and (Player.muted[chan] = false) then
+    begin
+       {Calculate new volume}
+       if (Player.vsl[chan] = 0) then Player.vsl[chan] := TANDY.volume[chan];
+
+       Player.vsl[chan] := Player.vsl[chan] - (slidespeed * 0.23);
+
+       if Player.vsl[chan] < 0 then
+       begin
+         Player.vsl[chan] := 0;
+       end;
+
+       TANDY.volume[chan] := round(Player.vsl[chan]);
+
+       {And perform the toneslide}
+       toneslide(chan,Player.tsl[chan].speed,Player.tsl[chan].limit);
+
+    end;
+end;
+
+
+
+Procedure toneslide_and_volume_down(chan, slidespeed : byte);
+begin
+    if (TANDY.freq[chan] > 0) and (Player.muted[chan] = false) then
+    begin
+       {Calculate new volume}
+       if (Player.vsl[chan] = 0) then Player.vsl[chan] := TANDY.volume[chan];
+
+       Player.vsl[chan] := Player.vsl[chan] + (slidespeed * 0.23);
+
+       if Player.vsl[chan] > $F then
+       begin
+         Player.vsl[chan] := $F;
+       end;
+
+       TANDY.volume[chan] := round(Player.vsl[chan]);
+
+       {And perform the toneslide}
+       toneslide(chan,Player.tsl[chan].speed,Player.tsl[chan].limit);
+
+    end;
+end;
+
+
+
+
+
 {============ Arpeggio ==============}
 
 Procedure DoArpeggio(chan : byte);
@@ -398,15 +489,11 @@ begin
 
 
 
-   for channr := 0 to Editor.channels-2 do            {only the voice channels}
+   for channr := 0 to Editor.channels-2 do     {only for the voice channels}
    begin
 
      if (Player.muted[channr] = false) then
      begin
-
-        if (channr < Editor.channels-1) then  {Not the noise}
-        begin
-
 
         DoArpeggio(channr); {Arpeggio?}
 
@@ -441,40 +528,17 @@ begin
 
         if (patterns[Player.pattern_num]^[rownr][channr].effect = $05) then
         begin                              {Tone and Volume Slide}
-
           if (patterns[Player.pattern_num]^[rownr][channr].ep and $F0 > 0 ) and
             (patterns[Player.pattern_num]^[rownr][channr].ep and $0F = 0) then
-          begin
-            vol := TANDY.volume[channr];
-            dec(vol, patterns[Player.pattern_num]^[rownr][channr].ep shr 4);
+          toneslide_and_volume_up(channr,patterns[Player.pattern_num]^[rownr][channr].ep shr 4);
 
-            if vol < 0 then
-            begin
-              vol := 0;
-            end;
-
-           TANDY.Volume[channr] := vol;
-          end;
-
-          if (patterns[Player.pattern_num]^[rownr][channr].ep and $0F > 0 ) and
+         if (patterns[Player.pattern_num]^[rownr][channr].ep and $0F > 0 ) and
             (patterns[Player.pattern_num]^[rownr][channr].ep and $F0 = 0) then
-          begin
-           vol := TANDY.Volume[channr];
-           inc(vol,patterns[Player.pattern_num]^[rownr][channr].ep and $0F);
-
-           if vol > $0F then
-           begin
-             vol := $0F;
-           end;
-
-           TANDY.Volume[channr] := vol;
-          end;
-
-          toneslide(channr,Player.tsl[channr].speed,Player.tsl[channr].limit);
+          toneslide_and_volume_down(channr,patterns[Player.pattern_num]^[rownr][channr].ep and $0F);
 
         end;
 
-    end;
+
 
     end;
 
@@ -539,35 +603,48 @@ var on,oc,eff,ep,chan   : byte;
 
 begin
 
+  Restart:  {label for Position jump and pattern break to start playing the row again}
+
   For chan := 0 to Editor.channels-1 do  {Channel}
   begin
 
-   Restart:
 
     if not Player.muted[chan] then
     begin
 
-       on  := patterns[Player.pattern_num]^[rn][chan].note;   {speichere Note & Oktave}
+       on  := patterns[Player.pattern_num]^[rn][chan].note;   {save note and oktave}
        oc  := patterns[Player.pattern_num]^[rn][chan].octave;
-       eff := patterns[Player.pattern_num]^[rn][chan].effect; {Effekt}
+       eff := patterns[Player.pattern_num]^[rn][chan].effect; {effect}
        ep  := patterns[Player.pattern_num]^[rn][chan].ep;
        Player.arp[chan].go := false;
 
 
+      {============ 1. Update effects that must be processed before the note ==================}
 
-       if patterns[Player.pattern_num]^[rn][chan].volume > 0 then
+
+      {Volume}
+       if patterns[Player.pattern_num]^[rn][chan].volume > 0 then    {new value for volume?}
        begin
-         TANDY.Volume[chan] := patterns[Player.pattern_num]^[rn][chan].volume-1;
-         if TANDY.Volume[chan] > 15 then TANDY.Volume[chan] := 15;
+         TANDY.Volume[chan] := patterns[Player.pattern_num]^[rn][chan].volume-1; {update volume}
+         Player.vsl[chan] := patterns[Player.pattern_num]^[rn][chan].volume-1; {also for a volume slide}
 
-         if on = 0 then {Neue Lautstärke, aber keine neue Note}
+         if patterns[Player.pattern_num]^[rn][chan].volume-1 = $F then {Volume F = key off}
          begin
-            if (chan = Editor.channels-1) then
+           on := 13;
+           oc := 0;
+         end;
+
+
+         if on = 0 then {We have a new volume, but no new note...}
+         begin
+            if (chan = Editor.channels-1) then {Is this the noise channel?}
              begin
+                {Yes? Then update last noise sound with new volume}
                 TANDY_Noise(Player.onote[chan],Player.ooct[chan],TANDY.volume[chan]);
              end
             else
              begin
+               {If not, update last voice with new volume}
                PlayVoice(chan,TANDY.Freq[chan],TANDY.volume[chan]);
              end;
          end;
@@ -575,43 +652,38 @@ begin
 
 
 
+       {Finetune}
+       if (eff = $0A) and (ep > 0) and (chan < Editor.channels-1) then
+       {Finetune effect, with valid parameter and not in the noise channel?}
+       begin
+         Player.finetune := ep;
 
-        if (eff = $0A) then            {Player.finetune}
-        begin
-          Player.finetune := ep;
+         if on = 0 then {We have a new value for finetune, but no new note}
+         begin
+           {Calculate the frequency of the last note played on this channel}
+           pitch := note_to_freq(Player.onote[chan],Player.ooct[chan]);
 
-          if on = 0 then {neuer Wert für Player.finetune, aber keine neue Note}
-          begin
+           if Player.finetune < $80 then
+           begin
+             pitch := pitch-Player.finetune;
+             if pitch < minfreq then
+             pitch := minfreq;
+           end
+          else
+             pitch := pitch+(Player.finetune-$80);
 
-             pitch := note_to_freq(Player.onote[chan],Player.ooct[chan]);
-
-             if Player.finetune > 0 then
-             begin
-
-               if Player.finetune <= $80 then
-               begin
-                 pitch := pitch-Player.finetune;
-                 if pitch < minfreq then pitch := minfreq;
-               end
-               else
-               begin
-                 pitch := pitch+(Player.finetune-$80);
-               end;
-
-             end;
-
-              if chan < Editor.channels-1 then PlayVoice(chan,pitch,TANDY.volume[chan]);
-          end;
+           PlayVoice(chan,pitch,TANDY.volume[chan]); {Update channel with new frequency}
+         end;
 
         end
        else
         begin
-         Player.finetune := 0;
+         Player.finetune := 0; {Clear last finetune value}
         end;
 
 
-
-        if on = 13 then {key off}
+        {Key off}
+        if on = 13 then
         begin
          MuteVoice(chan);
          TANDY.volume[chan] := 15;
@@ -619,48 +691,54 @@ begin
         end;
 
 
-        if (on > 0) and (on < 13)  then    {Richtige Note?}
+
+       {============ 2. Play Note ==================}
+
+
+        if (on in [1..12]) then    {Valid note?}
         begin
 
-            if (eff = $03) or (eff = $05) then       {Oder ein Toneslide?}
+            if (eff = $03) or (eff = $05) then       {Does the note belong to a toneslide?}
             begin
-              Player.tsl[chan].limit := note_to_freq(on,oc);
+              Player.tsl[chan].limit := note_to_freq(on,oc);  {Update toneslide}
               if ep > 0 then Player.tsl[chan].speed :=  ep;
             end
             else
             begin
-              Player.tsl[chan].limit := 0;
-              Player.tsl[chan].freq := 0;
+              Player.tsl[chan].limit := 0;   {If not, reset toneslide variables}
               Player.tsl[chan].speed := 0;
 
-              if chan < Editor.channels-1 then
+              if chan < Editor.channels-1 then  {Is a voice channel being processed?}
               begin
-                pitch := note_to_freq(on,oc);
+                pitch := note_to_freq(on,oc); {Calculate notes frequency in Hz}
 
-                if Player.finetune > 0 then
+                if Player.finetune > 0 then   {Is finetune active?}
                 begin
 
-                  if Player.finetune <= $80 then
+                  if Player.finetune <= $80 then  {Values <= 80h have to be subtracted}
                   begin
                     pitch := pitch-Player.finetune;
+                    {Make sure that we do not reach a frequency unplayable for the Tandy}
                     if pitch < minfreq then pitch := minfreq;
                   end
                   else
                   begin
-                    pitch := pitch+(Player.finetune-$80);
+                    pitch := pitch+(Player.finetune-$80); {vakues > 80h have to be addded}
+                    {Make sure that we do not reach a frequency unplayable for the Tandy}
                     if pitch > maxfreq then pitch := maxfreq;
                   end;
 
                 end;
 
-                PlayVoice(chan,pitch,TANDY.volume[chan]);
-                Player.onote[chan] := on;                            {Sichern fr Effekte}
+                PlayVoice(chan,pitch,TANDY.volume[chan]); {Play the new frequency}
+                Player.onote[chan] := on; {Save actual vales for effects}
                 Player.ooct[chan]  := oc;
+                Player.vsl[chan] := patterns[Player.pattern_num]^[rn][chan].volume-1;
 
               end
-              else
+              else     {We're processing the noise channel}
               begin
-               TANDY_Noise(on,oc,TANDY.volume[chan]);
+               TANDY_Noise(on,oc,TANDY.volume[chan]);  {Play new noise}
               end;
 
            end;  {else}
@@ -668,20 +746,20 @@ begin
        end;  {Note}
 
 
+        {============ 3. Update effects that must be processed after the note starts playing ==================}
 
-
-        if (eff = $0F)  then			 {set Player.speed}
+        if (eff = $0F)  then	{set speed}
         begin
           if ep >  0 then
           begin
             if ep < $1F then
             begin
-              Player.speed := ep; {Set new Player.speed}
+              Player.speed := ep; {Set new speed}
             end
            else
             begin
               Player.tempo := ep;
-              set_timer(Player.tempo); {Set Player.tempo}
+              set_timer(Player.tempo); {Set tempo}
             end;
           end
         else
@@ -693,7 +771,7 @@ begin
           Update_Player_State;
         end;
 
-        if (eff = $0) and					{Arpeggio}
+        if (eff = $0) and	{Arpeggio}
            (ep > 0) and
            (Player.onote[chan] > 0) then
         begin
@@ -706,36 +784,41 @@ begin
         end;
 
 
-        if (eff = $01) then
-        begin    {Portamento up}
+        if (eff = $01) then  {Portamento up}
+        begin
           portamento_up(chan,ep,maxfreq);
-        end;  {Portamento up}
+        end;
 
-        if (eff = $02) then
-        begin    {Portamento down}
+        if (eff = $02) then {Portamento down}
+        begin
           portamento_down(chan,ep,minfreq);
-        end;  {Portamento down}
+        end;
 
         if (eff = $03) then  {Toneslide}
         begin
          toneslide(chan,Player.tsl[chan].speed,Player.tsl[chan].limit);
         end;
 
-
-        if (eff = $04) or (eff = $05) then  {Volume Slide}
+        if (eff = $04) then  {Volume Slide}
         begin
-
          if ((ep and $F0) > 0 ) and ((ep and $0F) = 0) then
           Slidevolume_up(chan,ep shr 4);
 
          if ((ep and $0F) > 0 ) and ((ep and $F0) = 0) then
           Slidevolume_down(chan,ep and $0F);
+        end;
 
+        if (eff = $05) then {Tone and Volume Slide}
+        begin
+          if ((ep and $F0) > 0 ) and ((ep and $0F) = 0) then
+            toneslide_and_volume_up(chan,ep shr 4);
+
+          if ((ep and $0F) > 0 ) and ((ep and $F0) = 0) then
+            toneslide_and_volume_down(chan,ep and $0F);
         end;
 
 
-
-       if (eff = $0D)  then					{Pattern break}
+       if (eff = $0D)  then	{Pattern break}
         begin
           inc(Player.Position);
           if Player.Position > Player.Songlength-1 then Player.Position := 0;
@@ -749,7 +832,7 @@ begin
           goto Restart;
         end;
 
-        if (eff = $0B) then					{Player.Position jump}
+        if (eff = $0B) then	{Position jump}
         begin
           if ep <= Player.Songlength then
           begin
@@ -769,9 +852,9 @@ begin
 
 
 
- end; {Alle Channels played}
+ end; {All channels played}
 
- update := true;  {Player.row has been played. Set flag to update Player.Position}
+ update := true;  {Row has been played. Set flag to update position}
 
 end;
 

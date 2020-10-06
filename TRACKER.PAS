@@ -191,7 +191,8 @@ Procedure UpdatePatternOrder(update_screen : boolean);
  for cnt := Player.Position-2 to Player.Position+2 do
  begin
   if cnt = Player.Position then bc := 4 else bc := palette.window_color;
-  if ((cnt >= 0) and (cnt <= Player.Songlength-1)) or (cnt = $FF) then
+
+  if ((cnt >= 0) and (cnt < Player.Songlength)) then
   begin
    Fastwrite(68,16+(cnt-Player.Position),15,bc,hexb(cnt)+':');
    Fastwrite(71,16+(cnt-Player.Position),14,bc,hexb(order[cnt]));
@@ -269,10 +270,10 @@ begin
    fastwrite(74,20,palette.text_color2,palette.window_color,hexb(Player.loop));
    fastwrite(64,22,7,palette.window_color,'Enter to edit');
 
-   UpdatePatternOrder(update_screen);
    cursor(true);
    Change_cursor(0,7);
-   if update_screen then ViewBuffer(buffer.screen1);
+   UpdatePatternOrder(update_screen);
+
 end;
 
 

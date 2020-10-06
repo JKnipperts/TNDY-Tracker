@@ -5,7 +5,7 @@
 
  Author: Jan Knipperts
  Program: TNDY-Tracker
- Version: 1.1
+ Version: 1.11
 
 ***************************************************************
 }
@@ -19,7 +19,8 @@ uses dos;
 
 const
  title          : string = 'TNDY Tracker by Jan Knipperts';
- version        : string = 'Version 1.1';
+ version        : string = 'Version 1.1a';
+ File_version   : byte = 2;  {File format version 2}
 
 
 type
@@ -64,8 +65,7 @@ type
 
  Tonesl          = record     {Tone slide}
     limit        : word;      {Frequency limit}
-    speed        : byte;      {Speed of the slide}
-    freq         : word;      {Current frequency}
+    speed	 : byte;      {Speed of the slide}
  end;
 
  arpeggio        = record     {Arpeggio}
@@ -134,6 +134,7 @@ type
     muted       : array[0..4] of boolean;  {channel muted?}
     arp         : array[0..3] of arpeggio; {stores information for arpeggio effect}
     tsl         : array[0..3] of tonesl;   {stores information for tone slide effect}
+    vsl		: array[0..3] of real;     {volume for volume slide}
     onote       : array[0..3] of byte;     {stores the last note played on each channel}
     ooct        : array[0..3] of byte;     {stores the octave of the last note played on each channel}
     finetune    : word;                    {the current finetune frequency}

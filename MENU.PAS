@@ -829,9 +829,9 @@ begin
 
   selected := 1;
   if SND.correct then
-    centeredtext(8,palette.text_color2,palette.mark_color,'ENABLED ')
+    fastwrite(37,8,palette.text_color2,palette.mark_color,' ENABLE  ')
   else
-    centeredtext(8,palette.text_color2,palette.mark_color,'DISABLED');
+    fastwrite(37,8,palette.text_color2,palette.mark_color,' DISABLE ');
 
   centeredtext(12,palette.text_color2,palette.menu_color,addspace(100,SND.Delay));
   centeredtext(14,palette.text_color2,palette.menu_color,addspace(100,SND.Tempo));
@@ -842,7 +842,7 @@ begin
   else
     centeredtext(18,palette.text_color2,palette.menu_color,'111,860 Hz');
 
-  mark(36,8,8);
+
 
   Clear_Keypress;
   viewbuffer(buffer.screen2);
@@ -853,7 +853,7 @@ begin
     case selected of
      1:
       begin
-    	mark(36,8,8);
+    	mark(37,8,9);
        	unmark(39,12,4,palette.text_color2);
       	unmark(39,14,4,palette.text_color2);
       	unmark(39,16,4,palette.text_color2);
@@ -862,7 +862,7 @@ begin
 
      2:
       begin
-        unmark(36,8,8,palette.text_color2);
+        unmark(37,8,9,palette.text_color2);
         mark(39,12,4);
       	unmark(39,14,4,palette.text_color2);
       	unmark(39,16,4,palette.text_color2);
@@ -871,7 +871,7 @@ begin
 
      3:
       begin
-        unmark(36,8,8,palette.text_color2);
+        unmark(37,8,9,palette.text_color2);
        	unmark(39,12,4,palette.text_color2);
      	mark(39,14,4);
      	unmark(39,16,4,palette.text_color2);
@@ -880,7 +880,7 @@ begin
 
      4:
       begin
-        unmark(36,8,8,palette.text_color2);
+        unmark(37,8,9,palette.text_color2);
        	unmark(39,12,4,palette.text_color2);
       	unmark(39,14,4,palette.text_color2);
       	mark(39,16,4);
@@ -889,7 +889,7 @@ begin
 
      5:
       begin
-        unmark(36,8,8,palette.text_color2);
+        unmark(37,8,9,palette.text_color2);
        	unmark(39,12,4,palette.text_color2);
       	unmark(39,14,4,palette.text_color2);
       	unmark(39,16,4,palette.text_color2);
@@ -919,14 +919,15 @@ begin
      case selected of
       1: begin
            if SND.correct = false then
-             SND.correct := true
+           begin
+             SND.correct := true;
+             fastwrite(37,8,palette.text_color2,palette.mark_color,' ENABLE  ');
+           end
            else
+           begin
              SND.correct := false;
-
-           if SND.correct then
-             centeredtext(8,palette.text_color2,palette.mark_color,'ENABLED ')
-           else
-             centeredtext(8,palette.text_color2,palette.mark_color,'DISABLED');
+             fastwrite(37,8,palette.text_color2,palette.mark_color,' DISABLE ');
+           end;
          end;
 
       2: begin
@@ -964,15 +965,16 @@ begin
      Clear_keypress;
       case selected of
       1: begin
-           if SND.correct = false then
-             SND.correct := true
+          if SND.correct = false then
+           begin
+             SND.correct := true;
+             fastwrite(37,8,palette.text_color2,palette.mark_color,' ENABLE  ');
+           end
            else
+           begin
              SND.correct := false;
-
-           if SND.correct then
-             centeredtext(8,palette.text_color2,palette.mark_color,'ENABLED ')
-           else
-             centeredtext(8,palette.text_color2,palette.mark_color,'DISABLED');
+             fastwrite(37,8,palette.text_color2,palette.mark_color,' DISABLE ');
+           end;
          end;
 
       2: begin
@@ -1040,8 +1042,8 @@ begin
   fastwrite(40,12,palette.text_color2,palette.menu_color,addspace(10,MODimp.Speed));
 
   case MODimp.volscale of
-    1: centeredtext(14,palette.text_color2,palette.menu_color,'  Direct   ');
-    2: centeredtext(14,palette.text_color2,palette.menu_color,'  Decibel  ');
+    1: fastwrite(36,14,palette.text_color2,palette.menu_color,'  Direct   ');
+    2: fastwrite(36,14,palette.text_color2,palette.menu_color,'  Decibel  ');
   end;
 
   selected := 1;
@@ -1057,7 +1059,7 @@ begin
        	mark(35,8,12);
       	unmark(38,10,5,palette.text_color2);
       	unmark(39,12,4,palette.text_color2);
-      	unmark(35,14,11,palette.text_color2);
+      	unmark(36,14,11,palette.text_color2);
       end;
 
      2:
@@ -1065,7 +1067,7 @@ begin
        	unmark(35,8,12,palette.text_color2);
       	mark(38,10,5);
       	unmark(39,12,4,palette.text_color2);
-      	unmark(35,14,11,palette.text_color2);
+      	unmark(36,14,11,palette.text_color2);
       end;
 
      3:
@@ -1073,7 +1075,7 @@ begin
       	unmark(35,8,12,palette.text_color2);
       	unmark(38,10,5,palette.text_color2);
       	mark(39,12,4);
-      	unmark(35,14,11,palette.text_color2);
+      	unmark(36,14,11,palette.text_color2);
       end;
 
      4:
@@ -1081,7 +1083,7 @@ begin
       	unmark(35,8,12,palette.text_color2);
       	unmark(38,10,5,palette.text_color2);
       	unmark(39,12,4,palette.text_color2);
-      	mark(35,14,11);
+      	mark(36,14,11);
       end;
     end;
 
@@ -1126,8 +1128,8 @@ begin
        4: begin
             if MODimp.volscale < 2 then inc(MODimp.volscale) else MODimp.volscale := 1;
             case MODimp.volscale of
-             1: centeredtext(14,palette.text_color2,palette.mark_color,'  Direct   ');
-             2: centeredtext(14,palette.text_color2,palette.mark_color,'  Decibel  ');
+             1: fastwrite(36,14,palette.text_color2,palette.mark_color,'  Direct   ');
+             2: fastwrite(36,14,palette.text_color2,palette.mark_color,'  Decibel  ');
             end;
           end;
       end;
@@ -1162,8 +1164,8 @@ begin
        4: begin
             if MODimp.volscale > 1 then dec(MODimp.volscale) else MODimp.volscale := 2;
             case MODimp.volscale of
-             1: centeredtext(14,palette.text_color2,palette.mark_color,'  Direct   ');
-             2: centeredtext(14,palette.text_color2,palette.mark_color,'  Decibel  ');
+             1: fastwrite(36,14,palette.text_color2,palette.mark_color,'  Direct   ');
+             2: fastwrite(36,14,palette.text_color2,palette.mark_color,'  Decibel  ');
             end;
           end;
       end;

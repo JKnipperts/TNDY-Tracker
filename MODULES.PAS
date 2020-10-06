@@ -6,7 +6,7 @@
 
  Author: Jan Knipperts
  Program: TNDY-Tracker
- Version: 1.11
+ Version: 1.12
 
 ***************************************************************
 }
@@ -58,19 +58,6 @@ begin
        patterns[c] := nil;
       end;
     end;
-   Player.MaxPattern := 0;
-   Player.Songlength := 1;
-   Player.loop := 0;
-   Player.Position := 0;
-   Player.pattern_num := 0;
-   Player.row := 0;
-   Editor.chan := 1;
-   fillchar(Player.arp,sizeof(Player.arp),0);
-   fillchar(Player.tsl,sizeof(Player.tsl),0);
-   fillchar(Player.onote,sizeof(Player.onote),0);
-   fillchar(Player.ooct,sizeof(Player.ooct),0);
-   fillchar(TANDY.volume,sizeof(TANDY.volume),15);
-   fillchar(TANDY.freq,sizeof(TANDY.freq),0);
    new(patterns[0]);
    fillchar(patterns[0]^,sizeof(TNDYPattern),0);
 end;
@@ -87,7 +74,7 @@ begin
   move(buffer.blankscreen^,buffer.screen2^,4000);
   writeto(buffer.screen2);
 
-  window(16,7,64,12,palette.text_color1,palette.mark_color,true);
+  window(10,7,70,12,palette.text_color1,palette.mark_color,true);
   centeredtext(7,palette.text_color2,palette.mark_color,' Error! ');
 
   case error of
@@ -173,29 +160,29 @@ begin
           if (erc > 0) then
           begin
 
-           dummy := $FF;                   {marker for empty Player.row count}
-           {$I-}
-           blockwrite(f,dummy,1);
-           blockwrite(f,erc,1);            {save number of empty Player.rows}
-           {$I+}
+            dummy := $FF;                   {marker for empty row count}
+            {$I-}
+            blockwrite(f,dummy,1);
+            blockwrite(f,erc,1);            {save number of empty rows}
+            {$I+}
 
-           if IOResult <> 0 then      {IO Error}
-           begin
-             error := 1;
-             exit;
-           end;
-           erc := 0;
+            if IOResult <> 0 then      {IO Error}
+            begin
+              error := 1;
+              exit;
+            end;
+            erc := 0;
          end;
 
 
-          if (tc <> Editor.channels-1) then {normal voice data}
+          if (tc < Editor.channels-1) then {normal voice data}
           begin
             cv := patterns[pc]^[rc][tc].volume;
 
             if (cv = 0) and (patterns[pc]^[rc][tc].note = 0) then  {if there is no volume, set note to 14}
-            Cevent.n_o := (14 shl 4) or patterns[pc]^[rc][tc].Octave
+             Cevent.n_o := (14 shl 4) or patterns[pc]^[rc][tc].Octave
             else
-            Cevent.n_o := (patterns[pc]^[rc][tc].note shl 4) or
+             Cevent.n_o := (patterns[pc]^[rc][tc].note shl 4) or
                            patterns[pc]^[rc][tc].Octave; {if not, store the full information}
 
             if (cv > 0) then dec(cv);		{save volume as 0 to 15 in the file}
@@ -237,11 +224,11 @@ begin
           if (rc = 63) then  {complete track is empty}
           begin
 
-           dummy := $FF;                   {marker for empty Player.row count}
+           dummy := $FF;                   {marker for empty row count}
 
            {$I-}
            blockwrite(f,dummy,1);
-           blockwrite(f,erc,1);            {save number of empty Player.rows}
+           blockwrite(f,erc,1);            {save number of empty rows}
            {$I+}
 
            {$I+}
@@ -256,7 +243,7 @@ begin
 
         end;
 
-    end; {Player.row count}
+    end; {row count}
 
   end; {track count}
 
@@ -270,46 +257,62 @@ Procedure Compress_Message;
 var
  mc,pc  : word;
  nc,c   : word;
+ oldc   : byte;
 
 
 begin
 
  fillchar(p_msg,sizeof(p_msg),0);
  mc := 1;
- pc := 1;
+ pc := 0;
+ oldc := 1;
  repeat;
-   if msg_buffer[mc] > 0 then
+   if msg_buffer[mc] <> oldc then
    begin
-    p_msg[pc] := msg_buffer[mc];
     inc(pc);
+    p_msg[pc] := msg_buffer[mc]; {put char in buffer}
+    oldc  := msg_buffer[mc];  {save last charakter}
    end
    else
    begin
 
      nc := 1;
-     while msg_buffer[mc] = 0 do
+
+     while msg_buffer[mc] = oldc do
      begin
       inc(nc);
       inc(mc);
      end;
+
      dec(nc);
      dec(mc);
 
-     if nc > 3 then
+
+     if nc >= 2 then
      begin
-       p_msg[pc] := $01;
-       p_msg[pc+1] := hi(nc);
-       p_msg[pc+2] := lo(nc);
-       inc(pc,3);
+       p_msg[pc+1] := 01;
+       if nc > $FF then
+       begin
+         p_msg[pc+2] := $FF;
+         p_msg[pc+3] := 01;
+         p_msg[pc+4] := nc-$FF;
+         inc(pc,4);
+       end
+       else
+       begin
+         p_msg[pc+2] := nc;
+         inc(pc,2);
+       end;
      end
      else
      begin
-       for c := 0 to nc-1 do
+       for c := 1 to nc do
        begin
-        p_msg[pc+c] := 0;
+        p_msg[pc+c] := oldc;
        end;
        inc(pc,nc);
      end;
+
     end;
 
     inc(mc);
@@ -368,12 +371,13 @@ begin
 
 
   Header.ID            := 'TNDY';
-  Header.Version       := 1;
+  Header.Version       := File_version;
   Header.Nchan	       := Editor.channels;
   Header.Length        := Player.Songlength;
   Header.loop          := Player.Loop;
-  Header.NPatterns     := Player.MaxPattern;
+  Header.NPatterns     := Player.MaxPattern+1;
   Header.Speed	       := Editor.D_Speed;
+
 
   if (Editor.d_tempo <= 18) then
    header.tempo := 0
@@ -585,7 +589,7 @@ begin
              exit;
            end;
 
-           inc(rc,(dummy-1));	{insert empty Player.rows (-1 because we add 1 at the end of the Player.loop)}
+           inc(rc,(dummy-1));	{insert empty rows (-1 because we add 1 at the end of the loop)}
         end
         else
         begin
@@ -649,7 +653,7 @@ begin
 
         inc(rc);
 
-    until rc >= 64;  {Player.row count}
+    until rc >= 64;  {row count}
 
   end; {track count}
 
@@ -662,38 +666,53 @@ Procedure Uncompress_Message;
 var
  mc,pc  : word;
  nc,c   : word;
- l,h	: byte;
+ l,h,
+ last	: byte;
 
 begin
  fillchar(msg_buffer,sizeof(msg_buffer),0);
  mc := 1;
  pc := 1;
  repeat;
-   if p_msg[pc] <> 1 then
+
+   if p_msg[pc] = 1 then
    begin
-    msg_buffer[mc] := p_msg[pc];
-    inc(mc);
+    last := p_msg[pc-1];
+
+    inc(pc);
+
+    if header.version = 1 then {Of course the old format is still supported :)}
+    begin
+      last := 0;
+
+      h := p_msg[pc];
+      inc(pc);
+      l := p_msg[pc];
+      asm
+       mov al,l
+       mov ah,h
+       mov nc,ax
+      end;
+    end
+    else
+    begin
+      nc := p_msg[pc];
+    end;
+
+    for c := 0 to nc do
+    begin
+      msg_buffer[mc+c] := last;
+    end;
+
+    inc(mc,nc);
    end
    else
    begin
-    inc(pc);
-    nc := 0;
-    h := p_msg[pc];
-    inc(pc);
-    l := p_msg[pc];
-
-    asm
-     mov al,l
-     mov ah,h
-     mov nc,ax
-    end;
-
-    for c := 1 to nc do
-    begin
-      msg_buffer[mc] := 0;
-      inc(mc);
-    end;
+    msg_buffer[mc] := p_msg[pc];
+    inc(mc);
    end;
+
+
 
    inc(pc);
   until pc > msg_size;
@@ -738,12 +757,14 @@ begin
       exit;
      end;
 
-     if header.id <> 'TNDY' then  {Not a TNDY file}
+
+     if (header.id <> 'TNDY') or (header.version > File_version) then  {Not a valid TNDY file}
      begin
       error := 2;
       close(f);
       exit;
      end;
+
 
 
      {$I-}
@@ -756,19 +777,8 @@ begin
        exit;
       end;
 
-     if filesize(f) <= (sizeof(header)+(msg_size+2)+header.length+
-        (header.nchan*2)) then  {Not a TNDY file or currupted?}
-     begin
-      error := 2;
-      close(f);
-      exit;
-     end;
-
-
-
-
      {$I-}
-     blockread(f,p_msg,msg_size);
+      blockread(f,p_msg,msg_size);
      {$I+}
       if IOResult <> 0 then      {IO Error}
       begin
@@ -780,12 +790,19 @@ begin
 
      Uncompress_Message;
 
+     if Header.Version = File_version then {Version 1 saves it -1}
+     begin
+       dec(Header.NPatterns);
+     end;
 
-     Player.Songlength := Header.Length;
+
      Player.loop 	:= header.loop;
      Editor.channels    := Header.Nchan;
-     Player.MaxPattern  := Header.NPatterns;
      Player.Speed	:= header.Speed;
+     Player.Songlength  := Header.Length;
+     Player.MaxPattern  := Header.NPatterns;
+
+
 
      if header.tempo = 0 then
       Player.tempo := 18
@@ -853,7 +870,6 @@ type
    n,o          : byte;
    d,nt		: byte;
    c		: word;
-
 
 begin
  if filename <> '' then
@@ -958,12 +974,14 @@ begin
           patterns[Player.Position]^[Player.row][Editor.chan].note := n;  	    {save it in pattern}
           patterns[Player.Position]^[Player.row][Editor.chan].Octave := o;
 
-          if (note_freq <> orig_freq) and (snd.correct = true) then
+          if (snd.correct = true) then
            {Use Finetune effect to correct deviations between the frequencies if enabled}
           begin
-            note_freq := Note_to_Freq(n,o);		    {Get the frequency of this note}
 
-            if note_freq > orig_freq then
+             {Get exact frequency of this note}
+             note_freq := Note_to_Freq(n,o);
+
+            if note_freq > orig_freq+2 then  {+2 tolerace of rounding values}
             begin
               patterns[Player.Position]^[Player.row][Editor.chan].effect := $0A;	{Finetune}
               patterns[Player.Position]^[Player.row][Editor.chan].ep := note_freq-orig_freq;
@@ -971,7 +989,7 @@ begin
               patterns[Player.Position]^[Player.row][Editor.chan].ep := $7F;
             end;
 
-            if note_freq < orig_freq then
+            if note_freq < orig_freq-2 then    {-2 tolerace of rounding values}
             begin
               patterns[Player.Position]^[Player.row][Editor.chan].effect := $0A;	{Finetune}
               patterns[Player.Position]^[Player.row][Editor.chan].ep := orig_freq-note_freq;
@@ -1018,13 +1036,11 @@ begin
 
 
         r := 1000 / SND.tempo;  {tick duration in ms}
-        r := SND.Speed*r;	{Player.row duration in ms}
+        r := SND.Speed*r;	{row duration in ms}
 
-        {Number of empty Player.rows to add after the note}
-        time := (Note.Duration*SND.Delay) / r;
-
-
-
+        {Number of empty rows to add after the note}
+        time := round((Note.Duration*SND.Delay) / r);
+        if time = 0 then time := 1;
 
         for c := 1 to round(time) do
         begin
@@ -1331,16 +1347,15 @@ begin
         $5:
         begin
          patterns[Player.Position]^[Player.row][Editor.chan].effect := 5;
-         patterns[Player.Position]^[Player.row][Editor.chan].ep := 1;
-         {round(patterns[Player.Position]^[Player.row][Editor.chan].ep / 4);}
+         {patterns[Player.Position]^[Player.row][Editor.chan].ep := 1;}
+
         end;
 
 
         $A:
         begin
          patterns[Player.Position]^[Player.row][Editor.chan].effect := 4;
-         patterns[Player.Position]^[Player.row][Editor.chan].ep := 1;
-         {round(patterns[Player.Position]^[Player.row][Editor.chan].ep / 4);  }
+         {patterns[Player.Position]^[Player.row][Editor.chan].ep := 1;}
         end;
 
 
@@ -1427,7 +1442,7 @@ begin
          patterns[Player.Position]^[Player.row][Editor.chan].Octave := (NCount div 12)+1;
          patterns[Player.Position]^[Player.row][Editor.chan].note   := (NCount-(NCount DIV 12)*12)+1;
 
-         {Lowest Player.Positionsible tandy note is A-2...}
+         {Lowest possible tandy note is A-2...}
          if (Editor.chan < 3) then {except for pc speaker or noise...}
          begin
           if patterns[Player.Position]^[Player.row][Editor.chan].Octave < 2 then
@@ -1458,7 +1473,7 @@ begin
 
  Player.Speed := MODimp.Speed;	 {Set timing for AMIGA Mods}
  Player.tempo := MODimp.tempo;
- set_timer(Player.tempo); {Reset timer to new tepo}
+ set_timer(Player.tempo); {Reset timer to new tempo}
 
  if Editor.channels = 5 then
  begin

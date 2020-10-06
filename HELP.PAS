@@ -28,11 +28,11 @@ const
  about_msg    : string = 'A tracker for the TI SN76496A sound generator chip.';
  about_p_msg  : string = 'Written in Pascal and assembler code on a 80486 with 100 MHz.';
  dedi_msg1    : string = 'Dedicated to all who are still writing programs for DOS';
- dedi_msg2    : string = 'and all who love old hardware.';
+ dedi_msg2    : string = 'and to all who love old hardware and keep it alive.';
 
 
 
- Help_keys    : array[1..42] of string[59] =
+ Help_keys    : array[1..43] of string[59] =
  ('                                                           ',
   'Pattern Editor:                                            ',
   '---------------                                            ',
@@ -41,19 +41,20 @@ const
   'PageDown           = Jump 16 rows down                     ',
   'Home               = Jump to first row                     ',
   'End                = Jump to last row                      ',
-  'Backspace          = Delete previous note                  ',
-  'Del                = Delete note at cursor                 ',
-  'Ins                = Insert space at cursor position       ',
-  'Return             = Edit Order                            ',
-  'Shift + Pgup/Pgdwn = Change octave                         ',
-  'Shift + Home/End   = Change volume                         ',
-  'Shift+Ins          = Add pattern                           ',
-  '+/-  (Numpad)      = Edit next / previous pattern          ',
   'Tab                = Jump to next track                    ',
   'Shift-Tab          = Jump to previous track                ',
+  'Backspace          = Delete previous note                  ',
+  'Del                = Delete note at cursor                 ',
+  'Shift+Del	      = Delete pattern                        ',
   'Strg+p             = Clear current pattern                 ',
   'Strg+t             = Clear current track                   ',
-  'Space              = Play song from current row / Stop/Edit',
+  'Ins                = Insert space at cursor position       ',
+  'Shift+Ins          = Add new pattern                       ',
+  'Shift + Pgup/Pgdwn = Change octave                         ',
+  'Shift + Home/End   = Change volume                         ',
+  'Return             = Edit Order                            ',
+  '+/-  (Numpad)      = Edit next / previous pattern          ',
+  'Space              = Play song from current row / Stop     ',
   'Shift+Space        = Play current pattern from current row ',
   'F1 to F5           = Mute / Unmute channel                 ',
   'ESC                = Menu / Cancel                         ',
@@ -70,13 +71,13 @@ const
   'Cursor left/right  = Select digit of pattern number        ',
   'Home               = Jump to first entry                   ',
   'End                = Jump to last entry                    ',
-  'Tab/Retrun         = Edit Loop position / Return to editor ',
+  'Tab/Retrun         = Edit loop position                    ',
   'ESC                = Jump back to the pattern editor       ',
   '0-9,A-F            = Enter digit (hex) of pattern number   ',
   'Only already created patterns can be entered!              ',
   '                                                           ');
 
- Help_keys_lines = 42;
+ Help_keys_lines = 43;
 
  Help_FX    : array[1..48] of string[59] =
  ('                                                           ',
@@ -99,8 +100,8 @@ const
   '04 = Volume Slide                                          ',
   'Slides note volume up/down at speed x/y depending on which ',
   'nibble of the parameter is specified.                      ',
-  ' 4 x0 increases note volume by x units per tick.	      ',
-  ' 4 0y decreases note volume by y units per tick.	      ',
+  ' 4 x0 increases note volume by x*0.23 units per tick.      ',
+  ' 4 0y decreases note volume by y*0.23 units per tick.      ',
   '                                                           ',
   '05 = Volume Slide + Tone Portamento                        ',
   'Combination of Toneslide and Volumeslide.                  ',
