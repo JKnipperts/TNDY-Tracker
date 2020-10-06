@@ -7,7 +7,7 @@ The tracker was written for Borland Pascal 7.0, but with a few modifications it 
 
 ## Some features:
 - Import of Amiga MOD files (pattern data)
-- Import of Tandy/PCjr music from early Sierra AGI games (Kings Quest etc.).
+- Import of Tandy/PCjr music from Sierra AGI (AGIv2 and AGIv3) games (Kings Quest etc.).
 - Option to use the PC Speaker as additional channel
 - Supports typical "tracker effects" like portamento, volume slide etc.
 - Own, space-saving file format
