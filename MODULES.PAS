@@ -883,6 +883,11 @@ begin
 
    error := 0;
    Clear_Pattern_Data;
+   fillchar(player,sizeof(player),0);
+   fillchar(editor,sizeof(editor),0);
+
+
+
 
    assign(f,filename);
    {$I-}
@@ -1158,6 +1163,8 @@ begin
  if filename <> '' then
  begin
    Clear_Pattern_Data;
+   fillchar(player,sizeof(player),0);
+   fillchar(editor,sizeof(editor),0);
 
    writeto(buffer.screen2);
    window(16,7,64,12,palette.text_color1,palette.menu_color,true);
