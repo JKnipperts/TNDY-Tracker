@@ -19,7 +19,7 @@ uses dos;
 
 const
  title          : string = 'TNDY Tracker by Jan Knipperts';
- version        : string = 'Version 1.1a';
+ version        : string = 'Version 1.1a - Pre-release';
  File_version   : byte = 2;  {File format version 2}
 
 

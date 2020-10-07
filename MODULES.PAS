@@ -6,7 +6,7 @@
 
  Author: Jan Knipperts
  Program: TNDY-Tracker
- Version: 1.12
+ Version: 1.13
 
 ***************************************************************
 }
@@ -264,58 +264,61 @@ begin
 
  fillchar(p_msg,sizeof(p_msg),0);
  mc := 1;
- pc := 0;
+ pc := 1;
  oldc := 1;
  repeat;
    if msg_buffer[mc] <> oldc then
    begin
-    inc(pc);
     p_msg[pc] := msg_buffer[mc]; {put char in buffer}
     oldc  := msg_buffer[mc];  {save last charakter}
+    inc(pc);
+    inc(mc);
    end
    else
    begin
 
      nc := 1;
 
-     while msg_buffer[mc] = oldc do
-     begin
+     repeat
       inc(nc);
       inc(mc);
-     end;
-
+     until (msg_buffer[mc] <> oldc) or
+           (mc > 400);
      dec(nc);
-     dec(mc);
 
+
+     if nc = 399 then {empty description?}
+     begin
+       msg_size := 0;
+       exit;
+     end;
 
      if nc >= 2 then
      begin
-       p_msg[pc+1] := 01;
+       p_msg[pc] := 01;
        if nc > $FF then
        begin
-         p_msg[pc+2] := $FF;
-         p_msg[pc+3] := 01;
-         p_msg[pc+4] := nc-$FF;
-         inc(pc,4);
-       end
-       else
-       begin
-         p_msg[pc+2] := nc;
-         inc(pc,2);
-       end;
+         p_msg[pc+1] := $FF;
+         p_msg[pc+2] := nc-$FF;
+         inc(pc,3);
+        end
+        else
+        begin
+          p_msg[pc+1] := nc;
+          inc(pc,2);
+        end;
      end
      else
      begin
-       for c := 1 to nc do
-       begin
-        p_msg[pc+c] := oldc;
-       end;
+       for c := 0 to nc-1 do
+       p_msg[pc+c] := oldc;
        inc(pc,nc);
      end;
 
+
+
     end;
 
-    inc(mc);
 
   until mc > 400;
   msg_size := pc;
@@ -422,15 +425,18 @@ begin
    exit;
  end;
 
-{$I-}
-  blockwrite(f,p_msg,msg_size);
-{$I+}
-
- if IOResult <> 0 then      {IO Error}
+ if msg_size > 0 then {only content will be saved}
  begin
-   error := 1;
-   close(f);
-   exit;
+   {$I-}
+   blockwrite(f,p_msg,msg_size);
+   {$I+}
+
+   if IOResult <> 0 then      {IO Error}
+   begin
+     error := 1;
+     close(f);
+     exit;
+   end;
  end;
 
 {$I-}
@@ -675,10 +681,9 @@ begin
  pc := 1;
  repeat;
 
-   if p_msg[pc] = 1 then
+   if p_msg[pc] = 1 then {repeat last char}
    begin
     last := p_msg[pc-1];
-
     inc(pc);
 
     if header.version = 1 then {Of course the old format is still supported :)}
@@ -697,24 +702,34 @@ begin
     else
     begin
       nc := p_msg[pc];
+
+      if nc = $FF then
+      begin
+       inc(mc,255);
+       inc(pc);
+       nc := p_msg[pc];
+      end;
     end;
 
-    for c := 0 to nc do
+
+    for c := 1 to nc do
     begin
-      msg_buffer[mc+c] := last;
+      msg_buffer[mc] := last;
+      inc(mc);
     end;
+    inc(pc);
 
-    inc(mc,nc);
    end
    else
    begin
     msg_buffer[mc] := p_msg[pc];
     inc(mc);
+    inc(pc);
    end;
 
 
 
-   inc(pc);
+
   until pc > msg_size;
 end;
 
@@ -777,20 +792,24 @@ begin
        exit;
       end;
 
-     {$I-}
-      blockread(f,p_msg,msg_size);
-     {$I+}
-      if IOResult <> 0 then      {IO Error}
-      begin
-       error := 1;
-       close(f);
-       exit;
-      end;
+     if msg_size > 0 then
+     begin
+       {$I-}
+        blockread(f,p_msg,msg_size);
+       {$I+}
+       if IOResult <> 0 then      {IO Error}
+       begin
+         error := 1;
+         close(f);
+         exit;
+       end;
+       Uncompress_Message;
+     end
+     else
+     fillchar(msg_buffer,sizeof(msg_buffer),0);
 
 
-     Uncompress_Message;
-
-     if Header.Version = File_version then {Version 1 saves it -1}
+     if Header.Version = File_version then {Version 1 saved it -1}
      begin
        dec(Header.NPatterns);
      end;

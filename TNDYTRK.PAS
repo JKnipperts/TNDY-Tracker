@@ -2,7 +2,7 @@
 
 {
  Tracker for TNDY and TLPT Tandy 3-Voice sound devices
- Version 1.1 - 05/10/20
+ Version 1.1 - 07/10/20
  by Jan Knipperts
 
  A tracker for the TI SN76496A sound generator chip.

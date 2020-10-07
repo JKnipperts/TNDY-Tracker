@@ -180,8 +180,8 @@
 
    for posi := 1 to 400 do
    begin
-     if msg_buffer[posi] > $20 then
-      fastwrite(x,y,15,0,chr(msg_buffer[posi]));
+
+     fastwrite(x,y,15,0,chr(msg_buffer[posi]));
 
      inc(x);
 
@@ -227,8 +227,7 @@
    repeat
      if is_key_pressed then Get_Key;
 
-     if (ord(key_Ascii) > $20) and
-        (ord(key_Ascii) < $FF)  then
+     if (ord(key_Ascii) > $20) then
      begin
 
          if (posi < 400) then
