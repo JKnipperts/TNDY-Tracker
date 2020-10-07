@@ -1,7 +1,14 @@
-The TNDY Tracker file format v1:
+The TNDY Tracker file format v2:
 --------------------------------
 This file describes the structure of the TND file format that TNDY Tracker uses to store music for the TI SN76496A sound generator chip.
 The format is based on the classic module formats of other trackers for the PC and the Amiga.
+
+Differences to version 1 of the file format:
+Mainly the way how the description is stored has been improved. Not only 0 bytes but every character that occurs several times in a row is now encoded in a space-saving way. The number of repetitions is now preferably one byte instead of one word.
+Furthermore the total number of patterns is now stored with values starting from 1. Before, the counting started at 0, which can be irritating.
+The new format was introduced with TNDY-Tracker version 1.1. Of course the program still loads version 1 TND files.
+
+But now to the structure of the TND version 2 files:
 
  1. The Header:
 
@@ -12,14 +19,14 @@ Here is the structure of the header:
   ID-String ("TNDY")    4  Byte
   File format version   1  Byte
   Number of channels    1  Byte
-  Songlength	        1  Byte
+  Songlength	           1  Byte
   Loop position         1  Byte
   Number of patterns    1  Byte
-  Speed 		1  Byte
+  Speed               		1  Byte
   Tempo                 1  Byte
 
 
-The actual file format version is 1.
+The actual file format version is 2.
 Speed is the number ticks per row. Tempo the timer speed in Hz (ticks per second).
 A Tempo of 0 means the standard IBM PC timer speed of 18.2 Hz.
 
@@ -32,12 +39,12 @@ First comes a word that holds the size of the compressed text.
 
   Size of compressed message	2 Byte
 
-The description is a simple Ascii text with a maximum of 400 characters. To keep the file size small it is compressed as follows:
-ASCII characters (> 20h) are taken directly, but if more than three spaces/0 bytes follow each other, they are encoded as follows
-The first byte contains the value 01, this serves as a marker. This is followed by a word containing the number of spaces to be inserted.
-Note that the spaces are always coded with the value 0!
-So if there is no message, there are five bytes at this position: first a Word with the value 3, the size of the packed text.
-Then the marker byte (value 01) and then a Word with the value 400, because an empty description consists of 400 bytes with the value 0.
+The description is a simple Ascii text, stored in a buffer with space for 400 characters. To keep the file size small it is compressed as follows:
+If the same character appears three or more times in a row (e.g. in unused space) not every character is stored in the file.
+In this case you will find the character once and then a code of two or three bytes. 
+The first byte contains the value 01 and serves as a marker that this character should be written several times in a row. 
+The second byte contains the number of repetitions. If this value is greater than 255, a third byte contains the number of the remaining repetitions.
+If the song does not contain a message/description, the size is 0.
 
 3. Pattern Order Table:
 
@@ -97,7 +104,8 @@ Note that the attenuation of the TI SN76496A can take values from 0 to 15 (0Fh),
 
  04 = Volume slide
  Slides note volume up/down at speed x/y depending on which parameter is specified. Effect is applied per tick;
-
+ One unit is 0.23 of a volume unit of the sound chip to extend the limited volume spectrum a bit. 
+ 
  05 = Toneslide and Volume slide
  This effect continues a previously started Toneslide and also performs a volume slide.
  Parameters work like those for the normal Volume slide (04).
@@ -149,4 +157,5 @@ And this is all about how the data is stored in the TND files.
 The exact meaning of the values, like the frequency noise data or volume values can be found in the technical details of the sound chip.
 For more information on this, see for example: https://wiki.scummvm.org/index.php/AGI/Specifications/Sound#The_tone_generation
 
-Jan Knipperts / September 2020
+
+Jan Knipperts / October 2020
