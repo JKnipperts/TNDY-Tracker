@@ -102,7 +102,7 @@ begin
 
   centeredtext(10,palette.text_color1,palette.mark_color,'Press any key to continue.');
 
-  viewbuffer(buffer.screen2);
+  displaybuffer(buffer.screen2);
 
   Wait_for_Keypress;
 
@@ -127,7 +127,7 @@ begin
 
 
   writeto(buffer.screen1);
-  viewbuffer(buffer.screen1);
+  displaybuffer(buffer.screen1);
 end;
 end;
 
@@ -348,7 +348,7 @@ begin
     centeredtext(9,palette.text_color1,palette.menu_color,'File '+filename+' already exists!');
     centeredtext(10,palette.text_color1,palette.menu_color,'Overwrite it? Y/N');
 
-    viewbuffer(buffer.screen2);
+    displaybuffer(buffer.screen2);
 
     Clear_Keypress;
     repeat
@@ -358,7 +358,7 @@ begin
       begin
        Clear_Keypress;
        writeto(buffer.screen1);
-       viewbuffer(buffer.screen1);
+       displaybuffer(buffer.screen1);
        error := 6;
        exit;
       end;
@@ -366,7 +366,7 @@ begin
     until (upcase(key_Ascii) = 'Y') or (upcase(key_Ascii) = 'Z') or (key_code = 27);
     Clear_Keypress;
     writeto(buffer.screen1);
-    viewbuffer(buffer.screen1);
+    displaybuffer(buffer.screen1);
   end;
 
 
@@ -476,7 +476,7 @@ begin
   ox := GetX;
   oy := GetY;
   x := 34;
-  Viewbuffer(buffer.screen2);
+  displaybuffer(buffer.screen2);
 
   cursor(true);
   change_cursor(6,7);
@@ -494,7 +494,7 @@ begin
       fastwrite(34+length(filename),10,7,0,'.TND');
       inc(x);
       Clear_Keypress;
-      Viewbuffer(buffer.screen2);
+      displaybuffer(buffer.screen2);
     end;
 
     if key_code = 14 then {Backspace}
@@ -508,7 +508,7 @@ begin
         dec(x);
       end;
       Clear_Keypress;
-      Viewbuffer(buffer.screen2);
+      displaybuffer(buffer.screen2);
     end;
 
     if key_code = 28 then  {Enter}
@@ -518,7 +518,7 @@ begin
       Proceed_Errors;
       Clear_Keypress;
       writeto(buffer.screen1);
-      viewbuffer(buffer.screen1);
+      displaybuffer(buffer.screen1);
       gotoxy(ox,oy);
       change_cursor(0,7);
       cursor(false);
@@ -530,7 +530,7 @@ begin
    error := 6;
    Clear_Keypress;
    writeto(buffer.screen1);
-   viewbuffer(buffer.screen1);
+   displaybuffer(buffer.screen1);
    gotoxy(ox,oy);
    change_cursor(0,7);
    cursor(false);
@@ -898,7 +898,7 @@ begin
    window(16,7,64,12,palette.text_color1,palette.menu_color,true);
    centeredtext(9,palette.text_color1,palette.menu_color,'Loading Sierra AGI game music.');
    centeredtext(10,palette.text_color1,palette.menu_color,'Please wait...');
-   viewbuffer(buffer.screen2);
+   displaybuffer(buffer.screen2);
 
    error := 0;
    Clear_Pattern_Data;
@@ -1189,7 +1189,7 @@ begin
    window(16,7,64,12,palette.text_color1,palette.menu_color,true);
    centeredtext(9,palette.text_color1,palette.menu_color,'Loading and converting Amiga Module.');
    centeredtext(10,palette.text_color1,palette.menu_color,'Please wait...');
-   viewbuffer(buffer.screen2);
+   displaybuffer(buffer.screen2);
 
    error := 0;
 

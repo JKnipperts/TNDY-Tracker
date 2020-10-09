@@ -117,6 +117,8 @@ type
     screen2     : Pointer;      {additional buffer}
     oldscreen   : Pointer;      {buffer to hold a copy of the screen before modifying it}
     blankscreen : Pointer;      {buffer to hold a copy of the initial screen}
+    pbuffer	: Pointer;      {Pattern screen buffers}
+    pbuffer1	: Pointer;      {Pattern screen buffer}
  end;
 
 {================ Player ===================}

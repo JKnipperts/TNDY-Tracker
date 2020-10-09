@@ -3,12 +3,16 @@
  Textmode
  Useful procedures and functions for fast drawing and
  buffering in 80x25 text mode
- Version 1.93 - 27.09.2020
+ Version 1.94 - 08.10.2020
+         - modified for TNDY Tracker
  Author: Jan Knipperts
  *******************************************************
-}
 
-{Added compiler directives for compiling TNDY Tracker}
+ - Added compiler directives for compiling TNDY Tracker
+ - Removed limits to be able to write outside the visible area
+ - Improved buffering
+
+}
 
 
 Unit Textmode;
@@ -55,7 +59,7 @@ Procedure ClrScr;
 Procedure Fill(c : char; attr : byte);
 Procedure SetWritePage(p : byte);
 Procedure SetViewPage(p : byte);
-Procedure ViewBuffer(p : pointer);
+Procedure DisplayBuffer(p : pointer);
 Procedure Writeto(p : pointer);
 Function  Mouse_detected : boolean;
 Function  Mouse_Init : Boolean;
@@ -79,21 +83,32 @@ type
   mousedata     = record
    nb,b         : byte;
    x,y          : word;
+   mouse_there  : boolean;
+  end;
+
+  screendata    = record
+  maxX,
+  maxY,
+  page,
+  tc,
+  tbc           : byte;
+  vidseg        : word;
   end;
 
 
 var
- mi             : pointer;
  mouse          : mousedata;
- mouse_there    : boolean;
- page,tc,tbc,
- ocs,oce        : byte;
- writeseg,
- viewseg,
- vidseg          : word;
+ txtscreen	: screendata;
 
 
 implementation
+var
+ ocs,oce        : byte;
+ writebuffer,
+ viewbuffer     : pointer;
+ mi             : pointer;
+
+
 
 Function Detect_VidSeg : word;
 begin
@@ -114,7 +129,7 @@ end;
 Function atr(fg,bg : byte; blink : boolean) :byte;
 var a : byte;
 begin
- if VidSeg = $B800 then {Color display}
+ if txtscreen.VidSeg = $B800 then {Color display}
  begin
   a := fg or (bg shl 4);
   if not blink then a := a and not (1 shl 7);
@@ -133,7 +148,7 @@ Procedure ChangeAttr(x,y,atrib : byte);
 begin
   if x > 0 then x := x-1;
   if y > 0 then y := y-1;
-  mem[writeseg:(((y*80)+x) shl 1)+1]:=atrib;
+  mem[seg(writebuffer^):ofs(writebuffer^)+(((y*txtscreen.maxX)+x) shl 1)+1]:=atrib;
 end;
 
 
@@ -142,21 +157,17 @@ end;
 
 Procedure PutChar(x,y: Byte; ch: Char; fg, bg : byte);
 begin
-
   if x > 0 then x := x-1;
   if y > 0 then y := y-1;
-  if (x <= 79) and (y <= 25) then
-  begin
-  mem[writeseg:(((y*80)+x) shl 1)]:=Byte(ch);
-  mem[writeseg:(((y*80)+x) shl 1)+1]:=atr(fg,bg,false)
-  end;
+  mem[seg(writebuffer^):ofs(writebuffer^)+(((y*txtscreen.maxX)+x) shl 1)]:=Byte(ch);
+  mem[seg(writebuffer^):ofs(writebuffer^)+(((y*txtscreen.maxX)+x) shl 1)+1]:=atr(fg,bg,false)
 end;
 
 Function GetChar(x,y: Byte): Char;
 begin
   if x > 0 then x := x-1;
   if y > 0 then y := y-1;
-  GetChar:=Char(mem[writeseg:((y*80)+x) shl 1]);
+  GetChar:=Char(mem[seg(writebuffer^):ofs(writebuffer^)+((y*txtscreen.maxX)+x) shl 1]);
 end;
 
 Function GetTextColor(x,y: Byte): Byte;
@@ -164,7 +175,7 @@ begin
   if x > 0 then x := x-1;
   if y > 0 then y := y-1;
 
-  GetTextColor:=mem[writeseg:(((y*80)+(x-1)) shl 1)+1] and $f;
+  GetTextColor:=mem[seg(writebuffer^):ofs(writebuffer^)+(((y*txtscreen.maxX)+(x-1)) shl 1)+1] and $f;
 end;
 
 Function GetTextBackground(x,y: Byte): Byte;
@@ -172,7 +183,7 @@ begin
   if x > 0 then x := x-1;
   if y > 0 then y := y-1;
 
-  GetTextBackground:=mem[writeseg:(((y*80)+(x-1)) shl 1)+1] or $f;
+  GetTextBackground:=mem[seg(writebuffer^):ofs(writebuffer^)+(((y*txtscreen.maxX)+(x-1)) shl 1)+1] or $f;
 end;
 
 Procedure Cursor(onoff : boolean);
@@ -319,11 +330,15 @@ end;
 
 Procedure Fill(c : char; attr : byte);
 {Very fast screenfill}
-assembler;
+var s,o : word;
+begin
+ s := seg(writebuffer^);
+ o := ofs(writebuffer^);
 asm
-   mov ax, writeseg;
+   mov ax, s
    mov es, ax
-   mov di, 4000;
+   mov di, o
+   add di, 4000;
    mov al, c
    mov ah, attr
    std
@@ -332,6 +347,7 @@ asm
    cmp di, 0
    jnz @Loop
    stosw
+end;
 end;
 
 Procedure ClrScr;
@@ -345,9 +361,9 @@ Procedure Centeredline(y,c,b : byte; title : string);
 var z,x : byte;
 begin
   z := 1;
-  for x := 1 to 80 do
+  for x := 1 to txtscreen.maxX do
   begin
-    if (x >= (40-(length(title) div 2))) and (z <= length(title)) then
+    if (x >= ((txtscreen.maxX div 2)-(length(title) div 2))) and (z <= length(title)) then
     begin
      putchar(x,y,title[z],c,b);
      inc(z);
@@ -402,7 +418,7 @@ Procedure Mouse_SetHLimits(xmin, xmax : Word);
 { set horizontal limits }
 assembler;
  asm
-  cmp mouse_there,0
+  cmp mouse.mouse_there,0
   je  @fail
   mov ax,7
   mov cx,xmin
@@ -415,7 +431,7 @@ Procedure Mouse_SetVLimits(ymin, ymax : Word);
 { set vertical limits }
 assembler;
  asm
-  cmp mouse_there,0
+  cmp mouse.mouse_there,0
   je  @fail
   mov ax,8
   mov cx,ymin
@@ -427,7 +443,7 @@ assembler;
 Procedure Mouse_Show;
 assembler;
  asm
-  cmp mouse_there,0
+  cmp mouse.mouse_there,0
   je  @fail
   mov ax,1
   int $33
@@ -437,7 +453,7 @@ assembler;
 Procedure Mouse_Hide;
 assembler;
  asm
-  cmp mouse_there,0
+  cmp mouse.mouse_there,0
   je  @fail
   mov ax,2
   int $33
@@ -447,7 +463,7 @@ assembler;
 Procedure Mouse_Read;
 assembler;
  asm
-  cmp mouse_there,0
+  cmp mouse.mouse_there,0
   je  @fail
   mov ax,3
   int $33
@@ -460,7 +476,7 @@ assembler;
 Procedure Mouse_SetPos(x, y : Byte);
 assembler;
  asm
-  cmp mouse_there,0
+  cmp mouse.mouse_there,0
   je  @fail
   mov ax,4
   int $33
@@ -476,7 +492,7 @@ assembler;
    if y > 0 then y := y-1;
    asm
     mov ah,2h
-    mov bh,page
+    mov bh,txtscreen.page
     mov dh,y
     mov dl,x
     int 10h
@@ -488,7 +504,7 @@ assembler;
  begin
  asm
    mov ah,3
-   mov bh,page
+   mov bh,txtscreen.page
    int 10h
    mov x,dl
   end;
@@ -500,7 +516,7 @@ assembler;
  begin
   asm
    mov ah,3
-   mov bh,page
+   mov bh,txtscreen.page
    int 10h
    mov y,dh
   end;
@@ -509,18 +525,18 @@ assembler;
 
  Procedure Textcolor(c : byte);
  begin
-  tc := c;
+  txtscreen.tc := c;
  end;
 
  Procedure Textbackground(c : byte);
  begin
-  tbc := c;
+  txtscreen.tbc := c;
  end;
 
  Procedure Scrolldown(lines,x,y,x1,y1 : byte);
  var a : byte;
  begin
-  a := atr(tc,tbc,false);
+  a := atr(txtscreen.tc,txtscreen.tbc,false);
  asm
   mov ah,7
   mov al,lines
@@ -536,7 +552,7 @@ assembler;
  Procedure Scrollup(lines,x,y,x1,y1 : byte);
  var a : byte;
  begin
-  a := atr(tc,tbc,false);
+  a := atr(txtscreen.tc,txtscreen.tbc,false);
  asm
   mov ah,6
   mov al,lines
@@ -580,7 +596,7 @@ end;
 
   for cnt := 1 to length(s) do
   begin
-   putchar(x,y,s[cnt],tc,tbc);
+   putchar(x,y,s[cnt],txtscreen.tc,txtscreen.tbc);
 
    inc(x);
    if x = 81 then
@@ -619,7 +635,7 @@ end;
 
  Procedure SetWritePage(p : byte);
  begin
-  page := p;
+  txtscreen.page := p;
  end;
 
  Procedure SetViewPage(p : byte);
@@ -632,12 +648,12 @@ end;
 
  Procedure Writeto(p : pointer);
  begin
-  writeseg := seg(p^);
+  writebuffer := p;
  end;
 
- Procedure ViewBuffer(p : pointer);
+ Procedure DisplayBuffer(p : pointer);
  begin
-  move(p^,ptr(viewseg,0)^,4000);
+  move(p^,viewbuffer^,4000);
  end;
 
  Procedure ShadowScreen;
@@ -651,7 +667,7 @@ end;
 
   z := 1;
   repeat;
-   mem[writeseg:z]:=atr;
+   mem[seg(writebuffer^):ofs(writebuffer^)+z]:=atr;
    inc(z,2);
   until (z >= 4000);
  end;
@@ -839,13 +855,16 @@ end;
 
 
 begin
- mouse_there := mouse_detected;
- tc := 7;
- tbc := 0;
+ mouse.mouse_there := mouse_detected;
+ txtscreen.tc := 7;
+ txtscreen.tbc := 0;
 
- VidSeg := Detect_VidSeg;
- viewseg := VidSeg;
- writeseg := viewseg;
+ txtscreen.VidSeg := Detect_VidSeg;
+ viewbuffer := ptr(txtscreen.VidSeg,0);
+ writebuffer := viewbuffer;
+ txtscreen.maxX  := 80;
+ txtscreen.maxY  := 25;
+
 
 end.
 

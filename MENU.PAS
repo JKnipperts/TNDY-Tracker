@@ -9,6 +9,9 @@
  Version: 1.13
   - support for new TNDYLPT
   - Updated message editor to new format
+  - improved screen buffering
+  - Some clean up
+
 
 ***************************************************************
 }
@@ -99,7 +102,7 @@
  begin
     for c := x to x+(l-1) do
     begin
-      if VidSeg = $B800 then
+      if txtscreen.VidSeg = $B800 then
         changeattr(c,y,atr(palette.text_color2,palette.mark_color,false))
       else
         AttrMDA(c,y,true,false,true);
@@ -111,7 +114,7 @@
  begin
     for c := x to x+(l-1) do
     begin
-      if VidSeg = $B800 then
+      if txtscreen.VidSeg = $B800 then
         changeattr(c,y,atr(col,palette.menu_color,false))
       else
         AttrMDA(c,y,false,false,false);
@@ -124,7 +127,7 @@
  begin
     for c := x to x+(l-1) do
     begin
-      if VidSeg <> $B800 then
+      if txtscreen.VidSeg <> $B800 then
       AttrMDA(c,y,true,false,true);
     end;
  end;
@@ -164,9 +167,9 @@
      posi      : word;
 
  const
-  min_x : byte = 21;
+  min_x : byte = 20;
   min_y : byte = 5;
-  max_x : byte = 60;
+  max_x : byte = 59;
   max_y : byte = 14;
 
 
@@ -180,7 +183,7 @@
 
    for posi := 1 to 400 do
    begin
-
+     if ord(msg_buffer[posi]) > $20 then
      fastwrite(x,y,15,0,chr(msg_buffer[posi]));
 
      inc(x);
@@ -202,13 +205,14 @@
    move(buffer.blankscreen^,buffer.screen1^,4000);
    writeto(buffer.screen1);
 
-   window(19,4,62,15,15,1,true);
-   centeredtext(4,palette.text_color2,palette.menu_color,' Description Editor: ');
+   window(18,4,61,15,15,1,true);
+   centeredtext(4,palette.text_color2,palette.menu_color,' Song description Editor: ');
+   centeredtext(15,palette.text_color2,palette.menu_color,' Press ESC to return to the tracker ');
    ox := GetX;
    oy := GetY;
 
 
-   block(21,5,60,14,15,0);
+   block(20,5,59,14,15,0);
 
    Print_Message;
 
@@ -221,7 +225,7 @@
    cursor(true);
    gotoxy(x,y);
    Change_cursor(6,7);
-   viewbuffer(buffer.screen1);
+   displaybuffer(buffer.screen1);
 
 
    repeat
@@ -258,7 +262,7 @@
 
          Print_Message;
          gotoxy(x,y);
-         viewbuffer(buffer.screen1);
+         displaybuffer(buffer.screen1);
          Clear_Keypress;
      end;
 
@@ -286,7 +290,7 @@
           end;
          end;
          gotoxy(x,y);
-         viewbuffer(buffer.screen1);
+         displaybuffer(buffer.screen1);
          Clear_Keyboard_Buffer;
       end;
 
@@ -324,7 +328,7 @@
 
        gotoxy(x,y);
        putchar(x,y,' ',15,0);
-       viewbuffer(buffer.screen1);
+       displaybuffer(buffer.screen1);
       end;
       Clear_Keypress;
      end;
@@ -334,7 +338,7 @@
      begin
       msg_buffer[posi] := 0;
       putchar(x,y,' ',15,0);
-      viewbuffer(buffer.screen1);
+      displaybuffer(buffer.screen1);
       Clear_Keypress;
      end;
 
@@ -344,6 +348,15 @@
       begin
        inc(x);
        inc(posi);
+      end
+      else
+      begin
+        if y < max_Y then
+        begin
+          x := min_X;
+          inc(y);
+          inc(posi);
+        end;
       end;
 
       gotoxy(x,y);
@@ -356,6 +369,15 @@
       begin
        dec(x);
        dec(posi);
+      end
+      else
+      begin
+        if y > min_Y then
+        begin
+         dec(y);
+         x := max_X;
+         dec(posi);
+        end;
       end;
       gotoxy(x,y);
       Clear_Keypress;
@@ -383,12 +405,28 @@
       Clear_Keypress;
     end;
 
+    if (key_code = 79) then {End}
+    begin
+      x := max_X;
+      gotoxy(x,y);
+      posi := ((y-min_Y)+1)*40;
+      Clear_Keypress;
+    end;
+
+    if (key_code = 71) then {Pos1}
+    begin
+      x := min_X;
+      gotoxy(x,y);
+      posi := 1+((y-min_Y)*40);
+      Clear_Keypress;
+    end;
+
 
    until (key_code= 1);
    gotoxy(ox,oy);
    cursor(false);
    move(buffer.screen2^,buffer.screen1^,4000);
-   viewbuffer(buffer.screen1);
+   displaybuffer(buffer.screen1);
    Clear_Keypress;
 end;
 
@@ -416,7 +454,7 @@ begin
   selected := 1;
 
   Clear_Keypress;
-  ViewBuffer(buffer.screen2);
+  displaybuffer(buffer.screen2);
 
   repeat
   if is_key_pressed then Get_Key;
@@ -444,7 +482,7 @@ begin
 
     str(bpm:3:0,s);
     centeredtext(13,palette.text_color2,palette.menu_color,'= '+s+ ' BPM');
-    ViewBuffer(buffer.screen2);
+    displaybuffer(buffer.screen2);
 
     if (key_code= 80) then  {down}
     begin
@@ -477,7 +515,7 @@ begin
 
 
      Clear_Keypress;
-     ViewBuffer(buffer.screen2);
+     displaybuffer(buffer.screen2);
     end;
 
     if (key_code= 53) or (key_code= 74) {-} or (key_code= 75) {up} then
@@ -496,7 +534,7 @@ begin
 
      end;
      Clear_Keypress;
-     ViewBuffer(buffer.screen2);
+     displaybuffer(buffer.screen2);
     end;
 
 
@@ -510,7 +548,7 @@ begin
 
   Clear_Keypress;
   writeto(buffer.screen1);
-  viewbuffer(buffer.screen1);
+  displaybuffer(buffer.screen1);
 end;
 
 
@@ -622,7 +660,7 @@ begin
 
   song := false;
   Clear_Keypress;
-  viewbuffer(buffer.screen2);
+  displaybuffer(buffer.screen2);
 
   repeat
     if is_key_pressed then Get_Key;
@@ -633,7 +671,7 @@ begin
       cursor(false);
       Clear_Keypress;
       writeto(buffer.screen1);
-      viewbuffer(buffer.screen1);
+      displaybuffer(buffer.screen1);
       exit;
     end;
 
@@ -641,7 +679,7 @@ begin
 
   fastwrite(39,8,15,0,upcase(key_Ascii));
   from_track := key_code-2;
-  viewbuffer(buffer.screen2);
+  displaybuffer(buffer.screen2);
   Clear_Keypress;
 
   gotoxy(39,11);
@@ -655,7 +693,7 @@ begin
       cursor(false);
       Clear_Keypress;
       writeto(buffer.screen1);
-      viewbuffer(buffer.screen1);
+      displaybuffer(buffer.screen1);
       exit;
     end;
 
@@ -666,7 +704,7 @@ begin
   cursor(false);
   mark(28,13,12);
 
-  viewbuffer(buffer.screen2);
+  displaybuffer(buffer.screen2);
   Clear_Keypress;
 
   repeat
@@ -677,7 +715,7 @@ begin
      unmark(28,13,12,palette.text_color1);
      mark(43,13,10);
      song := true;
-     viewbuffer(buffer.screen2);
+     displaybuffer(buffer.screen2);
      Clear_Keypress;
     end;
 
@@ -686,7 +724,7 @@ begin
      unmark(43,13,10,palette.text_color1);
      mark(28,13,12);
      song := false;
-     viewbuffer(buffer.screen2);
+     displaybuffer(buffer.screen2);
      Clear_Keypress;
     end;
 
@@ -696,7 +734,7 @@ begin
      cursor(false);
      Clear_Keypress;
      writeto(buffer.screen1);
-     viewbuffer(buffer.screen1);
+     displaybuffer(buffer.screen1);
      exit;
     end;
 
@@ -708,7 +746,7 @@ begin
   Clear_Keypress;
 
   writeto(buffer.screen1);
-  viewbuffer(buffer.screen1);
+  displaybuffer(buffer.screen1);
 end;
 
 
@@ -747,7 +785,7 @@ begin
 
  mark(38,8,5);
 
- Viewbuffer(buffer.screen2);
+ displaybuffer(buffer.screen2);
  Clear_Keypress;
 
  repeat
@@ -795,7 +833,7 @@ begin
       Clear_Keypress;
       mark(38,8,5);
       TANDY_Mute_all;
-      Viewbuffer(buffer.screen2);
+      displaybuffer(buffer.screen2);
    end;
 
   if (key_code= 75) {left} or (key_code= 80) {down} or  (key_code= 53) or (key_code= 74) {-}  then
@@ -833,14 +871,14 @@ begin
     mark(38,8,5);
     TANDY_Mute_all;
     Clear_Keypress;
-    Viewbuffer(buffer.screen2);
+    displaybuffer(buffer.screen2);
   end;
 
 
   until (key_code= 28) or (key_code= 1);
   Clear_Keypress;
   writeto(buffer.screen1);
-  viewbuffer(buffer.screen1);
+  displaybuffer(buffer.screen1);
 end;
 
 
@@ -883,7 +921,7 @@ begin
 
 
   Clear_Keypress;
-  viewbuffer(buffer.screen2);
+  displaybuffer(buffer.screen2);
 
   repeat
   if is_key_pressed then Get_Key;
@@ -1047,12 +1085,12 @@ begin
    end;
 
 
-      viewbuffer(buffer.screen2);
+      displaybuffer(buffer.screen2);
 
   until (key_code= 1) or (key_code= 28);
   Clear_Keypress;
   writeto(buffer.screen1);
-  viewbuffer(buffer.screen1);
+  displaybuffer(buffer.screen1);
 end;
 
 
@@ -1086,7 +1124,7 @@ begin
 
   selected := 1;
   Clear_Keypress;
-  viewbuffer(buffer.screen2);
+  displaybuffer(buffer.screen2);
 
   repeat
   if is_key_pressed then Get_Key;
@@ -1208,13 +1246,13 @@ begin
           end;
       end;
     end;
-      viewbuffer(buffer.screen2);
+      displaybuffer(buffer.screen2);
 
 
   until (key_code= 27) or (key_code= 1);
   Clear_Keypress;
   writeto(buffer.screen1);
-  viewbuffer(buffer.screen1);
+  displaybuffer(buffer.screen1);
 end;
 
 

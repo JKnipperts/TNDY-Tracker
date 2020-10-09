@@ -5,7 +5,7 @@
 
  Author: Jan Knipperts
  Program: TNDY-Tracker
- Version: 1.11
+ Version: 1.12
 
 ***************************************************************
 }
@@ -126,7 +126,9 @@ end;
 
 procedure ResetTimer;
 begin
- Program_PIT($36,0);
+   DisableTimerIRQ;
+   Program_PIT($36,0);
+   EnableTimerIRQ;
 end;
 
 
@@ -134,21 +136,26 @@ end;
 
 procedure set_timer(Hz  : Real);
 begin
-  If (Hz < 19) then Hz := 19;
-  If (Hz > 1193180) then Hz := 1193180;
-  Timer.Frequency  := Hz;
+    If (Hz > 1193180) then Hz := 1193180;
+    If (Hz < 19) then Hz := 19;
 
-  DisableTimerIRQ;
+    DisableTimerIRQ;
 
-  if Hz > 32 then
-   Timer.divider := round(1193180 / Hz)
-  else
-   Timer.divider := ($0ffff div Round(Hz/18.2));
+    if Hz > 32 then
+    begin
+     Timer.divider := round(1193180 / Hz);
+     Timer.Frequency := Hz;
+    end
+    else
+    begin
+     Timer.divider := ($0ffff div Round(32/18.2));
+     Timer.Frequency := 32;
+    end;
 
-  Program_PIT($34,Timer.divider);
-  EnableTimerIRQ;
+    Program_PIT($34,Timer.divider);
 
-  Timer.Clock_Counter := round(Timer.Frequency / 18.2065);
+    Timer.Clock_Counter := round(Timer.Frequency / 18.2);
+    EnableTimerIRQ;
 end;
 
 

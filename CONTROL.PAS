@@ -6,8 +6,9 @@
 
  Author: Jan Knipperts
  Program: TNDY-Tracker
- Version: 1.11
+ Version: 1.12
  - small bug fixes
+ - improved screen buffering
 
 ***************************************************************
 }
@@ -55,6 +56,7 @@ begin
 
     UpdatePatternOrder(false);
     Player.pattern_num := order[Player.Position];
+    Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
     UpdatePatternView(Editor.markedrow-8,true);
     Clear_Keypress;
   end;
@@ -72,6 +74,7 @@ begin
     if Player.Songlength-1 < Player.Position then dec(Player.Position);
     UpdatePatternOrder(false);
     Player.pattern_num := order[Player.Position];
+    Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
     UpdatePatternView(Editor.MarkedRow-8,true);
     Clear_Keypress;
 
@@ -95,6 +98,7 @@ begin
    if Player.Position > 0 then dec(Player.Position);
    UpdatePatternOrder(false);
    Player.pattern_num := order[Player.Position];
+   Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
    fastwrite(72,5,palette.text_color2,palette.window_color,hexb(Player.pattern_num));
    UpdatePatternView(Editor.MarkedRow-8,true);
    Clear_Keypress;
@@ -105,6 +109,7 @@ begin
    if Player.Position < Player.Songlength-1 then inc(Player.Position);
    UpdatePatternOrder(false);
    Player.pattern_num := order[Player.Position];
+   Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
    fastwrite(72,5,palette.text_color2,palette.window_color,hexb(Player.pattern_num));
    UpdatePatternView(Editor.MarkedRow-8,true);
    Clear_Keypress;
@@ -126,7 +131,7 @@ begin
          begin
            putchar(74,20,upcase(key_ASCII),14,4);
            gotoxy(75,20);
-           ViewBuffer(buffer.screen1);
+           displaybuffer(buffer.screen1);
            if hex2dec(getchar(74,20)+getchar(75,20)) <= Player.MaxPattern then
            player.loop := hex2dec(getchar(74,20)+getchar(75,20));
            Clear_Keypress;
@@ -136,7 +141,7 @@ begin
             (key_code in [2..11])) then
          begin
            putchar(75,20,upcase(key_ASCII),14,4);
-           ViewBuffer(buffer.screen1);
+           displaybuffer(buffer.screen1);
            if hex2dec(getchar(74,20)+getchar(75,20)) <= Player.MaxPattern then
            player.loop := hex2dec(getchar(74,20)+getchar(75,20));
            Clear_Keypress;
@@ -166,25 +171,25 @@ begin
   if (getX = 71) and ((key_code in [30,48,46,32,38,33]) or
      (key_code in [2..11])) then
   begin
-    putchar(71,16,key_Ascii,14,4);
+    putchar(71,16,upcase(key_Ascii),14,4);
     gotoxy(72,16);
     if hex2dec(getchar(71,16)+getchar(72,16)) <= Player.MaxPattern then
     begin
      order[Player.Position] := hex2dec(getchar(71,16)+getchar(72,16));
     end;
-    ViewBuffer(buffer.screen1);
+    displaybuffer(buffer.screen1);
     clear_keypress;
   end;
 
   if (getX = 72) and ((key_code in [30,48,46,32,38,33]) or
      (key_code in [2..11])) then
   begin
-    putchar(72,16,key_Ascii,14,4);
+    putchar(72,16,upcase(key_Ascii),14,4);
     if hex2dec(getchar(71,16)+getchar(72,16)) <= Player.MaxPattern then
     begin
      order[Player.Position] := hex2dec(getchar(71,16)+getchar(72,16));
     end;
-    ViewBuffer(buffer.screen1);
+    displaybuffer(buffer.screen1);
     clear_keypress;
   end;
 
@@ -193,6 +198,7 @@ begin
   UpdatePatternOrder(false);
   Player.pattern_num := order[Player.Position];
   fastwrite(72,5,palette.text_color2,palette.window_color,hexb(Player.pattern_num));
+  Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
   UpdatePatternView(Editor.MarkedRow-8,true);
   gotoxy(ox,oy);
   Clear_Keypress;
@@ -223,7 +229,7 @@ begin
       	  Mute_All;
       	  move(buffer.screen1^,buffer.oldscreen^,4000);
       	  DrawMenu(active_menu);
-      	  viewbuffer(buffer.screen1);
+      	  displaybuffer(buffer.screen1);
       	  cursor(false);
       	  exit;
     	end;
@@ -259,7 +265,7 @@ begin
             Player.muted[key_code-59] := true;
             MuteVoice(key_code-59);
           end;
-
+          Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,Editor.MarkedRow-8,63);
           UpdatePatternView(Editor.MarkedRow-8,false);
          end;
           Clear_keyboard_buffer;
@@ -530,7 +536,7 @@ begin
         Patterns[Player.pattern_num]^[63][Editor.chan-1].effect := 0;
         Patterns[Player.pattern_num]^[63][Editor.chan-1].ep := 0;
         Patterns[Player.pattern_num]^[63][Editor.chan-1].volume := 0;
-
+        Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,Editor.MarkedRow-1,63);
         UpdatePatternView(Editor.MarkedRow-9,false);
        end;
 
@@ -550,6 +556,7 @@ begin
            Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].effect := 0;
            Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].ep := 0;
            Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].volume := 0;
+           Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,Editor.MarkedRow,63);
 
            if Editor.MarkedRow = 63 then    {if it's the last row, jump to the start of the pattern}
            begin
@@ -565,9 +572,9 @@ begin
            inc(Player.MaxPattern);
            Player.pattern_num := Player.MaxPattern;
            fastwrite(72,5,palette.text_color2,palette.window_color,hexb(Player.pattern_num)+'/'+hexb(Player.MaxPattern));
-
            new(patterns[Player.pattern_num]);        {Create new Pattern in memory}
            fillchar(patterns[Player.pattern_num]^,sizeof(TNDYPattern),0); {Clear it}
+           Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63); {Create text buffer for it}
            Player.row := 0;
            UpdatePatternView(Player.row-8,false);
          end;
@@ -617,7 +624,7 @@ begin
            begin
              Editor.MarkedRow := 0;
            end;
-
+           Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,Editor.MarkedRow,Editor.MarkedRow);
            UpdatePatternView(Editor.MarkedRow-8,false);		{Display the updated pattern}
 
          end
@@ -656,6 +663,7 @@ begin
             Player.row := 0;
             Editor.Markedrow := 0;
             Editor.chan := 1;
+            Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
             UpdatePatternOrder(false);
             UpdatePatternView(Editor.MarkedRow-8,false);
          end;
@@ -676,6 +684,7 @@ begin
            fastwrite(72,5,palette.text_color2,palette.window_color,hexb(Player.pattern_num));
            Player.row := 0;
            Editor.MarkedRow := 0;
+           Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
            UpdatePatternView(Editor.MarkedRow-8,false);
          end;
        end;
@@ -689,6 +698,7 @@ begin
            Player.row := 0;
            Editor.MarkedRow := 0;
            fastwrite(72,5,palette.text_color2,palette.window_color,hexb(Player.pattern_num));
+           Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
            UpdatePatternView(Editor.MarkedRow-8,false);
          end;
        end;
@@ -698,8 +708,9 @@ begin
          if (CTRL_State = true) then {Ctrl+P = Clear Pattern}
          begin
            fillchar(patterns[Player.pattern_num]^,sizeof(TNDYPattern),0);
+           Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
            UpdatePatternView(Editor.MarkedRow-8,false);
-            clear_keypress; {We do not want the pressed P to be processed as a note as well...}
+           clear_keypress; {We do not want the pressed P to be processed as a note as well...}
          end;
        end;
 
@@ -711,6 +722,7 @@ begin
            begin
              fillchar(patterns[Player.pattern_num]^[z][Editor.chan-1],sizeof(TNDYevent),0);
            end;
+           Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
            UpdatePatternView(Editor.MarkedRow-8,false);
            clear_keypress; {We do not want the pressed T to be processed as a note as well...}
          end;
@@ -862,7 +874,7 @@ begin
                     snote[Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].note]+
                     hexn(Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].octave)+
                     ' '+hexn(Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].volume-1));
-          ViewBuffer(buffer.screen1);
+          displaybuffer(buffer.screen1);
 
           Mute_All;
           Timing.ticks := 0;               {Reset tick counter}
@@ -871,6 +883,9 @@ begin
           {and play it}
           PlayVoice(Editor.chan-1,note_to_freq(Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].note,
                             Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].octave),0);
+
+
+          Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
 
           if Editor.MarkedRow < 63 then              {Update the patternview}
           UpdatePatternView(Editor.MarkedRow-7,false)
@@ -908,6 +923,9 @@ begin
          TANDY_Noise(Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].note,
                      Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].octave,0);
 
+         Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,
+                                     Editor.MarkedRow,Editor.MarkedRow); {update row in scren buffer}
+
          if Editor.MarkedRow < 63 then
           UpdatePatternView(Editor.MarkedRow-7,false)
          else
@@ -927,6 +945,9 @@ begin
           Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].ep := 0;
 
           Mute_All; 		{Mute all output}
+
+          Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,
+                                      Editor.MarkedRow,Editor.MarkedRow); {update row in scren buffer}
 
           if Editor.MarkedRow < 63 then
            UpdatePatternView(Editor.MarkedRow-7,false)
@@ -960,6 +981,8 @@ begin
             end;
           end;
        end;
+        Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,
+                                    Editor.MarkedRow,Editor.MarkedRow); {update row in scren buffer}
 
      end;
 
@@ -1031,14 +1054,17 @@ begin
              Patterns[Player.pattern_num]^[Editor.MarkedRow][Editor.chan-1].volume := dummy+1;
            end;
          end;
-
       end;
+    Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,
+                                    Editor.MarkedRow,Editor.MarkedRow); {update row in scren buffer}
 
    end; {Volume and FX edit}
+
  end; {Noteedit = false}
  end; {Pedit = true}
 
-    ViewBuffer(buffer.screen1); {Update the screen}
+
+    displaybuffer(buffer.screen1); {Update the screen}
     Clear_Keypress;
 
 
@@ -1063,7 +1089,7 @@ begin
           pause := true;
           Mute_ALL;
           DrawMenu(2);
-          viewbuffer(buffer.screen1);
+          displaybuffer(buffer.screen1);
          end;
 
 	if (key_code= 57) then {Space = Pause}
@@ -1095,6 +1121,7 @@ begin
            inc(Player.Position);
            Player.pattern_num := order[Player.Position];
            Player.row := 0;
+           Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
            UpdatePatternView(Player.row-8,false);
            Update_Player_State;
            Mute_ALL;
@@ -1108,6 +1135,7 @@ begin
          dec(Player.Position);
          Player.pattern_num := order[Player.Position];
          Player.row := 0;
+         Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
          UpdatePatternView(Player.row-8,false);
          Update_Player_State;
          Mute_ALL;
@@ -1139,7 +1167,7 @@ begin
        select := 1;
        move(buffer.oldscreen^,buffer.screen1^,4000);
        DrawMenu(active_menu);
-       viewbuffer(buffer.screen1);
+       displaybuffer(buffer.screen1);
        Clear_Keypress;
 
      end;
@@ -1153,7 +1181,7 @@ begin
         select := 1;
         move(buffer.oldscreen^,buffer.screen1^,4000);
         DrawMenu(active_menu);
-        viewbuffer(buffer.screen1);
+        displaybuffer(buffer.screen1);
         Clear_Keypress;
 
      end;
@@ -1165,14 +1193,14 @@ begin
         UnMark(Menu_pos[active_menu]+1,2+select,length(menu_text[active_menu][select]),15);
         inc(select);
         Mark(Menu_pos[active_menu]+1,2+select,length(menu_text[active_menu][select]));
-        viewbuffer(buffer.screen1);
+        displaybuffer(buffer.screen1);
        end
        else
        begin
         UnMark(Menu_pos[active_menu]+1,2+select,length(menu_text[active_menu][select]),15);
         select := 1;
         Mark(Menu_pos[active_menu]+1,2+select,length(menu_text[active_menu][select]));
-        viewbuffer(buffer.screen1);
+        displaybuffer(buffer.screen1);
        end;
        Clear_Keypress;
      end;
@@ -1184,14 +1212,14 @@ begin
         UnMark(Menu_pos[active_menu]+1,2+select,length(menu_text[active_menu][select]),15);
         dec(select);
         Mark(Menu_pos[active_menu]+1,2+select,length(menu_text[active_menu][select]));
-        viewbuffer(buffer.screen1);
+        displaybuffer(buffer.screen1);
        end
        else
        begin
         UnMark(Menu_pos[active_menu]+1,2+select,length(menu_text[active_menu][select]),15);
         select := menu_size[active_menu];
         Mark(Menu_pos[active_menu]+1,2+select,length(menu_text[active_menu][select]));
-        viewbuffer(buffer.screen1);
+        displaybuffer(buffer.screen1);
        end;
        Clear_Keypress;
      end;
@@ -1201,6 +1229,7 @@ begin
     if (key_code= 1) then {ESC}
     begin
       clear_keyboard_buffer;
+      Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
       Draw_Pattern_View(false);
       Draw_Pattern_Editor(true);
       Mute_All;
@@ -1244,7 +1273,7 @@ begin
            Editor.Channels := 4;
            Editor.noisetype := 1;
            Player.songlength := 1;
-
+           Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
            Draw_Pattern_View(false);
            Draw_Pattern_Editor(true);
            gotoxy(Editor.p_xp+4,14);
@@ -1268,7 +1297,7 @@ begin
            Proceed_Errors;
 
            writeto(buffer.screen1);
-           viewbuffer(buffer.screen1);
+           displaybuffer(buffer.screen1);
 
            if error <> 6 then {no user abort}
            begin
@@ -1277,6 +1306,7 @@ begin
             Player.row := 0;
             Editor.chan := 1;
             Editor.markedrow := 0;
+            Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
             Draw_Pattern_View(false);
             Draw_Pattern_Editor(true);
             gotoxy(Editor.p_xp+4,14);
@@ -1315,7 +1345,7 @@ begin
            Proceed_Errors;
 
            writeto(buffer.screen1);
-           viewbuffer(buffer.screen1);
+           displaybuffer(buffer.screen1);
 
            if error <> 6 then {no user abort}
            begin
@@ -1324,6 +1354,7 @@ begin
             Player.row := 0;
             Editor.chan := 1;
             Editor.markedrow := 0;
+            Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
             Draw_Pattern_View(false);
             Draw_Pattern_Editor(true);
             gotoxy(Editor.p_xp+4,14);
@@ -1349,7 +1380,7 @@ begin
            Proceed_Errors;
 
            writeto(buffer.screen1);
-           viewbuffer(buffer.screen1);
+           displaybuffer(buffer.screen1);
 
            if error <> 6 then {no user abort}
            begin
@@ -1358,6 +1389,7 @@ begin
             Player.row := 0;
             Editor.markedrow := 0;
             Editor.chan := 1;
+            Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
             Draw_Pattern_View(false);
             Draw_Pattern_Editor(true);
             gotoxy(Editor.p_xp+4,14);
@@ -1376,13 +1408,14 @@ begin
           1:                     {Play song}
           begin
             move(buffer.oldscreen^,buffer.screen1^,4000);
-            viewbuffer(buffer.screen1);
+            displaybuffer(buffer.screen1);
             Mute_All;
             patternplay := false;
             Clear_Keyboard_Buffer;
             Player.Position := 0;
             Player.pattern_num := order[Player.Position];
             Player.row := 0;
+            Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
             Draw_Pattern_View(false);
             Draw_Player_State(true);
             pause := false;
@@ -1393,7 +1426,7 @@ begin
           2:                     {Play Pattern}
           begin
             move(buffer.oldscreen^,buffer.screen1^,4000);
-            viewbuffer(buffer.screen1);
+            displaybuffer(buffer.screen1);
             Mute_All;
             patternplay := true;
             Clear_Keyboard_Buffer;
@@ -1408,7 +1441,7 @@ begin
           3:                     {Play from cursor}
           begin
             move(buffer.oldscreen^,buffer.screen1^,4000);
-            viewbuffer(buffer.screen1);
+            displaybuffer(buffer.screen1);
             Mute_All;
             patternplay := false;
             Clear_Keyboard_Buffer;
@@ -1430,7 +1463,7 @@ begin
            fillchar(TANDY.volume,sizeof(TANDY.volume),15);
            fillchar(TANDY.freq,sizeof(TANDY.freq),0);
            move(buffer.oldscreen^,buffer.screen1^,4000);
-           viewbuffer(buffer.screen1);
+           displaybuffer(buffer.screen1);
            mainmenu := false;
            pedit := true;
            Clear_Keyboard_Buffer;
@@ -1460,12 +1493,13 @@ begin
 
                 Mute_All;
                 move(buffer.oldscreen^,buffer.screen1^,4000);
+                Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
            	Draw_Pattern_View(false);
            	Draw_Pattern_Editor(false);
                 move(buffer.screen1^,buffer.oldscreen^,4000);
            	DrawMenu(active_menu);
            	cursor(false);
-      	        viewbuffer(buffer.screen1);
+      	        displaybuffer(buffer.screen1);
    	        gotoxy(Editor.p_xp+4,14);
                 Editor.chan := 1;
                 noteedit := true;
@@ -1493,13 +1527,14 @@ begin
              begin
                Clear_Keypress;
                Swap_Tracks_Menu;
+               Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
                Draw_Pattern_View(false);
                Draw_Pattern_Editor(false);
                DrawMenu(active_menu);
                UnMark(Menu_pos[active_menu]+1,2+select,length(menu_text[active_menu][select]),15);
                select := menu_size[active_menu];
                Mark(Menu_pos[active_menu]+1,2+select,length(menu_text[active_menu][select]));
-               viewbuffer(buffer.screen1);
+               displaybuffer(buffer.screen1);
                gotoxy(Editor.p_xp+4,14);
                Editor.chan := 1;
                noteedit := true;

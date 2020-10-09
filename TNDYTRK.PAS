@@ -15,7 +15,7 @@
   - Added support for newer version of Serdaco's TNDLPT.
   - Revised buffering for screen output to avoid flickering
   - Completely revised the keyboard interface. Now it is handled by IRQ.
-  - Setting Speed to 1 is possible now (because of the new keyboard handler).
+  - Setting Speed to 1 is possible now (because of the new keyboard handler and better screen buffering).
   - Fixed a bug that occured when saving an empty pattern
   - Improved the menu handling a bit
   - Fixed some small bugs and glitches
@@ -86,10 +86,11 @@ begin
   begin
     inc(timing.ticks);
 
-    if ((timing.ticks+1 >= Player.speed)) then
+
+
+    if ((timing.ticks >= Player.speed)) then
     begin
       Playrow(Player.row);
-      UpdatePos;
       timing.ticks := 0;
     end
     else
@@ -114,15 +115,13 @@ end;
 procedure TNDYint; interrupt;
 begin
 
-  Poll_Player;
-
   if Timing.clock_tick > 0 then
   begin
-  asm
-    cli
-    mov al,20h
-    out 20h,al
-  end;
+    asm
+     cli
+     mov al,20h
+     out 20h,al
+    end;
   end
   else
   begin
@@ -130,6 +129,7 @@ begin
      pushf
     end;
     oldint08;
+    Poll_Player;
   end;
 
   Timing.clock_tick := Timing.clock_tick+Timer.Clock_Counter;
@@ -216,18 +216,19 @@ begin
     writeln('');
     writeln(' /MDA         - Forces monochrome display output ');
     writeln(' /COLOR       - Forces color display output ');
+    writeln(' And you can specify a file name to load the file on startup.');
     writeln('');
     halt(0);
   end;
 
   if FindOption('/MDA') then
   begin
-    VidSeg := $B000;
+    txtscreen.VidSeg := $B000;
   end;
 
   if FindOption('/COLOR') then
   begin
-    VidSeg := $B800;
+    txtscreen.VidSeg := $B800;
   end;
 
 end;
@@ -242,13 +243,15 @@ procedure Save_Exit; Far;
 begin
   done_irq;			{Set original interrupt}
   Mute_All;			{Mute all sound output}
-  freemem(buffer.screen1,4000);       {Free buffers}
-  freemem(buffer.screen2,4000);       {Free buffers}
+  freemem(buffer.screen1,4000);       {Free buffers / allocated memory}
+  freemem(buffer.screen2,4000);
   freemem(buffer.blankscreen,4000);
   freemem(buffer.oldscreen,4000);
-  Clear_Pattern_Data;		{Clean up patterns and release additional memory}
-  dispose(patterns[0]);
-  ExitProc := OldExitProc;	{And now run the original exit proc}
+  freemem(buffer.pbuffer,7000);
+  freemem(buffer.pbuffer1,7000);
+  Clear_Pattern_Data;		{Clean up patterns and release additional allocate memory}
+  dispose(patterns[0]);         {also for pattern 0}
+  ExitProc := OldExitProc;	{run the original exit proc}
 end;
 
 
@@ -338,11 +341,14 @@ begin
   getmem(buffer.blankscreen,4000);
   getmem(buffer.screen2,4000);
   getmem(buffer.oldscreen,4000);
+  getmem(buffer.pbuffer,7000); {6912 bytes needed to be exact...}
+  getmem(buffer.pbuffer1,7000);
 
   if (buffer.screen1 = nil) or
      (buffer.screen2 = nil) or
      (buffer.oldscreen = nil) or
      (buffer.blankscreen = nil) or
+     (buffer.pbuffer = nil) or
      (maxavail < sizeof(TNDYPattern)) then
   begin
     clrscr;
@@ -352,8 +358,9 @@ begin
     halt(1);
   end;
 
-  Viewseg := VidSeg;   {configure video buffers}
-  Writeseg := viewseg;
+  fillchar(buffer.pbuffer^,7000,0);
+  fillchar(buffer.pbuffer1^,7000,0);
+
 
   OldExitProc := ExitProc; {Save the old and install the}
   ExitProc := @Save_Exit;  {new exit procedure}
@@ -362,7 +369,7 @@ begin
   set_timer(Player.tempo); {Reset timer to new frequency}
   init_irq;
 
-  if VidSeg = $B800 then  {color display}
+  if txtscreen.VidSeg = $B800 then  {color display}
   begin
     Palette.window_color := 0;    {set sheme for color screens}
     Palette.menu_color   := 1;
@@ -480,7 +487,7 @@ begin
     writeto(buffer.screen2);
     window(16,7,64,12,Palette.text_color1,Palette.menu_color,true);
     centeredtext(9,Palette.text_color1,Palette.menu_color,'Please wait...');
-    viewbuffer(buffer.screen2);
+    displaybuffer(buffer.screen2);
 
     if (pos('.TND',uppercase(paramstr(1))) > 0) then
     LoadTNDY(paramstr(1));
@@ -493,7 +500,7 @@ begin
 
     Proceed_Errors;
     writeto(buffer.screen1);
-    viewbuffer(buffer.screen1);
+    displaybuffer(buffer.screen1);
 
     if error = 0 then
     begin
@@ -504,8 +511,8 @@ begin
     end;
   end;
 
+  Update_Pattern_Screenbuffer(Buffer.Pbuffer,Player.pattern_num,0,63);
   writeto(buffer.screen1);
-
   Draw_Pattern_View(false);
   Draw_Pattern_Editor(true);
   gotoxy(Editor.p_xp+4,14);
@@ -516,11 +523,11 @@ begin
     if pause then Handle_keyboard;
   until quit;
 
-  writeto(ptr(vidseg,0));
+  writeto(ptr(txtscreen.vidseg,0));
   clrscr;
   writeln('Greetings to all members of DOSReloaded.de and Vogons.org. ');
   writeln('Special thanks to Matze and Serge for their fantastic hardware projects and to');
-  writeln('everyone who helped me find annoying bugs and improve the tracker.');
+  writeln('everyone who helped me to improve the tracker and find annoying bugs.');
   writeln('');
   Cursor(true);
   Change_cursor(6,7);

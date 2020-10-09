@@ -91,9 +91,6 @@ type
 
  Procedure TNDYint; interrupt;
  begin
-
-  inc(tick);
-
   if clock_tick > 0 then
   begin
   asm
@@ -108,6 +105,7 @@ type
      pushf
     end;
     oldint08;
+    inc(tick);
   end;
 
   clock_tick := clock_tick+Timer.Clock_Counter;

@@ -5,12 +5,13 @@
  Fileselector
  Author: Jan Knipperts
 
- Version  1.11 - Sptember 29, 2020
-          (I wrote version 1.0 on July 12, 1998 :) )
+ Version  1.12 - October 9, 2020
+          (22 years... I wrote version 1.0 on July 12, 1998 :) )
 
           Changes:
            - Added screen buffering
            - Now uses my keyboard unit instead of borlands crt
+           - improved screen buffering
            - Some clean up
 
 ***************************************************************
@@ -64,7 +65,8 @@ function Sort_by_Time(X, Y: DirPtr): Boolean;
 
 {Example for the call in your program:
 
- User_selected_File('*.exe',Sort_by_Name,2,4,22,ptr(Vidseg,0)^);
+ User_selected_File('*.exe',Sort_by_Name,2,4,22,ptr(txtscreen.
+ Vidseg,0)^);
 }
 
 
@@ -337,11 +339,11 @@ begin
    begin
     if (mark = false) then
     begin
-     if (VidSeg = $B800) then c := Selector_DIRcol else c := 7;
+     if (txtscreen.VidSeg = $B800) then c := Selector_DIRcol else c := 7;
     end
     else
     begin
-     if (VidSeg = $B800) then c := Selector_Markcol else c := 15;
+     if (txtscreen.VidSeg = $B800) then c := Selector_Markcol else c := 15;
     end;
     fastwrite(x,y,c,Selector_BackCol,n+e);
     fastwrite(x+14,y,c,Selector_BackCol,'<DIR>');
@@ -351,11 +353,11 @@ begin
 
     if (mark = false) then
     begin
-     if (VidSeg = $B800) then c := Selector_FILEcol else c := 7;
+     if (txtscreen.VidSeg = $B800) then c := Selector_FILEcol else c := 7;
     end
     else
     begin
-     if (VidSeg = $B800) then c := Selector_Markcol else c := 15;
+     if (txtscreen.VidSeg = $B800) then c := Selector_Markcol else c := 15;
     end;
 
     fastwrite(x,y,c,Selector_BackCol,n+e);
@@ -365,11 +367,11 @@ begin
    begin
     if (mark = false) then
     begin
-     if (VidSeg = $B800) then c := Selector_DRVcol else c := 7;
+     if (txtscreen.VidSeg = $B800) then c := Selector_DRVcol else c := 7;
     end
     else
     begin
-     if (VidSeg = $B800) then c := Selector_Markcol else c := 15;
+     if (txtscreen.VidSeg = $B800) then c := Selector_Markcol else c := 15;
     end;
     fastwrite(x,y,c,Selector_BackCol,dir[index]^.name);
     fastwrite(x+14,y,c,Selector_BackCol,'<DRIVE>');
@@ -439,7 +441,7 @@ begin
  WriteEntry(mx,my,marked,true);   {Mark selected file}
 
  clear_keypress;
- ViewBuffer(screenbuffer);
+ displaybuffer(screenbuffer);
 
  repeat;
 
@@ -467,7 +469,7 @@ begin
     end;
    end;
    Clear_Keypress;
-   ViewBuffer(screenbuffer);
+   displaybuffer(screenbuffer);
   end;
 
   if key_code = DWN then
@@ -491,7 +493,7 @@ begin
     end;
    end;
    Clear_Keypress;
-   ViewBuffer(screenbuffer);
+   displaybuffer(screenbuffer);
   end;
 
 
@@ -504,7 +506,7 @@ begin
      List(xpos,ypos,start,start+num-1);
      WriteEntry(mx,my,marked,true);   {Mark selected file}
      Clear_Keypress;
-     ViewBuffer(screenbuffer);
+     displaybuffer(screenbuffer);
   end;
 
   if (key_code = ENDE) and (marked < num_entries-1) then
@@ -526,7 +528,7 @@ begin
      List(xpos,ypos,start,start+num-1);
      WriteEntry(mx,my,marked,true);   {Mark selected file}
      Clear_Keypress;
-     ViewBuffer(screenbuffer);
+     displaybuffer(screenbuffer);
   end;
 
   if (key_code = PGUP) and (marked > 1) then
@@ -553,7 +555,7 @@ begin
         List(xpos,ypos,start,start+num-1);
         WriteEntry(mx,my,marked,true);   {Mark selected file}
         Clear_Keypress;
-        ViewBuffer(screenbuffer);
+        displaybuffer(screenbuffer);
      end;
 
   if (key_code = PGDWN) and (marked < num_entries-1) then
@@ -589,7 +591,7 @@ begin
      List(xpos,ypos,start,start+num-1);
      WriteEntry(mx,my,marked,true);   {Mark selected file}
      Clear_Keypress;
-     ViewBuffer(screenbuffer);
+     displaybuffer(screenbuffer);
   end;
 
 
@@ -608,7 +610,7 @@ begin
 
     if length(path) > length(cs) then cs := path;
 
-    if (VidSeg = $B800) then
+    if (txtscreen.VidSeg = $B800) then
      centeredtext(ypos+num+1,Selector_BackCol,Selector_BackCol,cs)
     else
     begin
@@ -664,7 +666,7 @@ begin
        path := path + '...';
       end;
 
-      if (VidSeg = $B800) then
+      if (txtscreen.VidSeg = $B800) then
        centeredtext(ypos+num+1,Selector_BackCol,Selector_BackCol,cs)
       else
       begin
@@ -680,7 +682,7 @@ begin
    end;
 
    Clear_Keypress;
-   ViewBuffer(screenbuffer);
+   displaybuffer(screenbuffer);
  end;
 
   until key_code = ESC;

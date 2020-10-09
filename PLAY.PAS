@@ -5,9 +5,10 @@
 
  Author: Jan Knipperts
  Program: TNDY-Tracker
- Version: 1.12
+ Version: 1.13
   - Changed frequency calculation
   - Fixed tone slide
+  - improved screen buffering
 
 ***************************************************************
 }
@@ -554,10 +555,13 @@ end;
 
 Procedure UpdatePos;
 {Updates the song Position}
+var p : pointer; {dummy pointer for buffer exchange}
 begin
 
-if (update = true) and not pause then
-begin
+  if Player.Position < Player.Songlength-1 then {Create next pattern buffer in the background}
+   Update_Pattern_Screenbuffer(buffer.pbuffer1,order[Player.Position+1],Player.row,Player.row)
+  else
+   Update_Pattern_Screenbuffer(buffer.pbuffer1,order[Player.loop],Player.row,Player.row);
 
   inc(Player.row);
 
@@ -566,9 +570,16 @@ begin
    if not patternplay then
    begin
     inc(Player.Position);
-    if Player.Position > Player.Songlength-1 then Player.Position := Player.loop;
+    if Player.Position > Player.Songlength-1 then
+    Player.Position := Player.loop;
+
     Player.pattern_num := order[Player.Position];
     Player.row := 0;
+
+    p := buffer.pbuffer;  {Swap buffers}
+    buffer.pbuffer := buffer.pbuffer1;
+    buffer.pbuffer1 := p;
+
    end
    else
    begin
@@ -579,15 +590,11 @@ begin
     Draw_Pattern_Editor(true);
    end;
 
+   Update_Player_State;
+
   end;
 
-    update := false;
-
-    UpdatePatternView(Player.row-8,true);
-    if not pedit then Update_Player_State;
-
-end;
-
+  UpdatePatternView(Player.row-8,true);
 end;
 
 
@@ -595,7 +602,7 @@ end;
 
 
 Procedure Playrow(rn : byte);
-{Plays one Player.row}
+{Plays one row}
 var on,oc,eff,ep,chan   : byte;
     pitch               : integer;
 
@@ -604,6 +611,8 @@ var on,oc,eff,ep,chan   : byte;
 begin
 
   Restart:  {label for Position jump and pattern break to start playing the row again}
+
+
 
   For chan := 0 to Editor.channels-1 do  {Channel}
   begin
@@ -854,7 +863,7 @@ begin
 
  end; {All channels played}
 
- update := true;  {Row has been played. Set flag to update position}
+ updatePOS;  {Row has been played. Up to the next..}
 
 end;
 

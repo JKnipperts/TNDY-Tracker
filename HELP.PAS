@@ -26,9 +26,12 @@ implementation
 
 const
  about_msg    : string = 'A tracker for the TI SN76496A sound generator chip.';
- about_p_msg  : string = 'Written in Pascal and assembler code on a 80486 with 100 MHz.';
- dedi_msg1    : string = 'Dedicated to all who are still writing programs for DOS';
- dedi_msg2    : string = 'and to all who love old hardware and keep it alive.';
+ about_p_msg  : string = 'This is a preliminary version for testing!';
+ {'Written in Pascal and assembler code on a 80486 with 100 MHz.';}
+ dedi_msg1    : string = 'Not all features are fully implemented and ';
+  {'Dedicated to all who are still writing programs for DOS';}
+ dedi_msg2    : string = 'probably there are still some bugs.';
+ {'and to all who love old hardware and keep it alive.';}
 
 
 
@@ -36,7 +39,7 @@ const
  ('                                                           ',
   'Pattern Editor:                                            ',
   '---------------                                            ',
-  'Cursor keys        = Move around                           ',
+  'Cursor keys        = Move cursor around                    ',
   'PageUp             = Jump 16 rows up                       ',
   'PageDown           = Jump 16 rows down                     ',
   'Home               = Jump to first row                     ',
@@ -178,7 +181,7 @@ const
    centeredtext(23,palette.text_color1,palette.menu_color,' You see line '+addspace(10,lc-1)+' to '+addspace(10,lc+16)+
                  ' of '+addspace(10,my-1)+' lines. ');
 
-   viewbuffer(buffer.screen1);
+   displaybuffer(buffer.screen1);
    Clear_Keypress;
 
    repeat;
@@ -195,7 +198,7 @@ const
    centeredtext(23,palette.text_color1,palette.menu_color,' You see line '+addspace(10,lc-1)+' to '+addspace(10,lc+16)+
                  ' of '+addspace(10,my-1)+' lines. ');
 
-    viewbuffer(buffer.screen1);
+    displaybuffer(buffer.screen1);
     Clear_Keypress;
    end;
 
@@ -207,7 +210,7 @@ const
     centeredtext(23,palette.text_color1,palette.menu_color,' You see line '+addspace(10,lc-1)+' to '+addspace(10,lc+16)+
                  ' of '+addspace(10,my-1)+' lines. ');
 
-    viewbuffer(buffer.screen1);
+    displaybuffer(buffer.screen1);
     Clear_Keypress;
    end;
 
@@ -219,7 +222,7 @@ const
     centeredtext(23,palette.text_color1,palette.menu_color,' You see line '+addspace(10,lc-1)+' to '+addspace(10,lc+16)+
                  ' of '+addspace(10,my-1)+' lines. ');
 
-    viewbuffer(buffer.screen1);
+    displaybuffer(buffer.screen1);
     Clear_Keypress;
    end;
 
@@ -231,7 +234,7 @@ const
     centeredtext(23,palette.text_color1,palette.menu_color,' You see line '+addspace(10,lc-1)+' to '+addspace(10,lc+16)+
                  ' of '+addspace(10,my-1)+' lines. ');
 
-    viewbuffer(buffer.screen1);
+    displaybuffer(buffer.screen1);
     Clear_Keypress;
    end;
 
@@ -246,7 +249,7 @@ const
                   ' of '+addspace(10,my-1)+' lines. ');
 
      Print_FX_Help_Screen(lc,helpnr);
-     viewbuffer(buffer.screen1);
+     displaybuffer(buffer.screen1);
      Clear_Keypress;
    end;
 
@@ -262,7 +265,7 @@ const
 
 
      Print_FX_Help_Screen(lc,helpnr);
-     viewbuffer(buffer.screen1);
+     displaybuffer(buffer.screen1);
      Clear_Keypress;
    end;
 
@@ -271,7 +274,7 @@ const
    until key_code= 1;
    Clear_Keypress;
    move(buffer.screen2^,buffer.screen1^,4000);
-   viewbuffer(buffer.screen1);
+   displaybuffer(buffer.screen1);
  end;
 
  {============ Show the "About TNDY Tracker" window ==============}
@@ -293,11 +296,11 @@ const
    centeredtext(16,palette.text_color2,palette.menu_color,dedi_msg2);
    centeredtext(18,palette.text_color1,palette.menu_color,' Press any key ');
 
-   viewbuffer(buffer.screen1);
+   displaybuffer(buffer.screen1);
 
    Wait_for_keypress;
    move(buffer.screen2^,buffer.screen1^,4000);
-   viewbuffer(buffer.screen1);
+   displaybuffer(buffer.screen1);
  end;
 
 
