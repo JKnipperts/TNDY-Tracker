@@ -27,3 +27,5 @@ load a TND file at ES:00 and call TND_Init_Player.
 Now everything is ready for playback and with calls of TND_Start and TND_Stop the playback can be started or stopped.
 TNDTEST.ASM and TNDPLAY.ASM are examples of the use of the player code. They also show how the current player status 
 can be queried or how I/O ports can be selected.
+
+![Alt text](https://github.com/JKnipperts/TNDY-Tracker/blob/master/images/TNDY_playing_ptn.png?raw=true "Title")
