@@ -21,4 +21,9 @@ So it's worth checking back here from time to time.
 
 Current release is version 1.2.
 
-
+## Player code:
+PLAYER.ASM contains all code to play a TND file. The use is very simple: Just include PLAYER.ASM in your program, 
+load a TND file at ES:00 and call TND_Init_Player.
+Now everything is ready for playback and with calls of TND_Start and TND_Stop the playback can be started or stopped.
+TNDTEST.ASM and TNDPLAY.ASM are examples of the use of the player code. They also show how the current player status 
+can be queried or how I/O ports can be selected.
