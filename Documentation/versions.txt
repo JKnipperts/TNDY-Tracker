@@ -1,0 +1,73 @@
+The development of the TNDY tracker so far:
+
+ V. 1.0 - 19/09/20
+  - Inital realease
+
+ V. 1.1a - pre-release - 07/10/20
+  - Changed timer interrupt from 1Ch to 08h and optimized the code of the
+    IRQ handler (No more runtimeerror!)
+  - Added file loading via command line
+  - Corrected a nasty bug in TNDY unit
+  - Added support for newer version of Serdaco's TNDLPT.
+  - Revised screen buffering to avoid flickering
+  - Revised the keyboard interface
+  	- No use of KB-interrupt anymore.
+  	  In Edit mode it queries the keyboard buffer of the bios (to get scan code AND characters)
+  	  but skips the Bios completley by direct port access while playing (to save some CPU time)
+  	- Increased compatibility for pre AT Machines
+  - Setting Speed to 1 is now possible (because of the new keyboard handler and better screen buffering).
+  - Fixed a bug that occured when saving an empty pattern
+  - Improved the menu handling a bit
+  - Fixed some small bugs and glitches
+     - The cursor did not disappear or had a wrong shape
+       under certain circumstances.
+     - The pattern editor always jumped to row 0 when leaving a menu.
+       Now you can continue working where you left off.
+     - Some submenus were a bit misaligned.
+  - Added "delete pattern" funcitonality (shift+delete)
+  - Added an option to select clock divider for AGI files. Some old player code
+    I found uses 99320 Hz instead of the 111860 Hz of the Tandy for frequency
+    calculation. And actually some SNDs sound a bit more coherent with that.
+  - Replaced the frequency calculation routine with a lookup table, because it took too much time
+    to calculate freqs on slow CPUs
+  - When editing the noise channel a specific info is now displayed.
+    Instead of the octave (that is not used on this channel) now the noise type is shown.
+  - Improved volume slide effect (thanks to FreddyV / Vogons).
+  - A lot of cleaning up and optimizing the code
+  - Some minor improvements
+
+ V. 1.1b - pre-release - 18/11/20 (Has only been released on Github)
+  - Improved the TNDY file format a tiny bit (version 2)
+    - better compression of the description
+    - minor corrections
+  - Cleaning up and optimizing the code to run faster on original XT/Tandy machines.
+  - Added three new effects for testing only (note delay, early note, note cut)
+  - Now you can export your song to Sierra-online's SND file format
+  - Improved the loading and conversion of Sierra SND files
+  - Added menu for misc. options to turn on/off some visual effects
+  - Added alternative player info screen with peak meter (F7).
+  - Many minor improvements and fixes
+  - still some nasty bugs to fix and it runs slow and tough on original Tandy 1000 and PCjr (but stable after all!)
+     - therefore still a pre-release :(
+  - tested some ideas for further effects and functions in this version
+
+
+ V. 1.2 - 03/05/2021
+  - Optimised the pattern editor and fixed some small issues in it
+  	- Added possibility to mark, copy and paste in pattern editor
+  	- Optimised delete functionalities
+  - Optimised menu handling
+  - Replay routines got completely revised
+  - Playback now takes place completely in the background (Menus can be accessed while the song continues to play)
+  - Revised order editor
+  - New keyboard layout
+  - Optimised screen buffering, many small visual improvements and fixes
+  - Optimized the order editor (+/- to quickly adjust entries, show entered pattern etc.)
+  - Fixed a nasty bug in the file selector (on a disk with just one file, the file didn't show up)
+  - Now the file selector works properly with DOS 2.x
+  - Completely revised screen drawing and screen buffering while playing
+  - Finaly the tracker runs smooth even on a 4.7 MHz 8088 CPU !!!
+  - disabled exporting of AGI files for this release because it causes some problems (sorry!)
+  - Fixed some keyboard issues on Tandy/PCjr
+
+
