@@ -1,20 +1,24 @@
 # TNDY-Tracker
-A music tracker for the TI SN76496A sound generator chip. 
-Perfect for Matze79's TNDY and Serdaco's TNDLPT sound devices, but I try to make the tracker work on a real Tandy or PCjr if possible. 
-Later versions will also support CMS/Game Blaster as an additional output option.
+A complete sound tracker for the Tandy 3-voice sound (TI SN76496A or compatible sound generator chip).
+Should work well on real old Tandy 1000 or PCjr hardware (A memory expansion is needed here!) and is great to use with
+new retro-hardware projects like Matze79's TNDY or Serdaco's TNDLPT sound devices. 
 
-The tracker was written for Borland Pascal 7.0, but with a few modifications it should compile with Freepascal as well.
+The tracker was written in old Borland Pascal 7.0, but with just a few modifications it should compile with Freepascal as well.
 
-## Some features:
-- Import of Amiga MOD files (pattern data)
-- Import of Tandy/PCjr music from Sierra AGI (AGIv2 and AGIv3) games (Kings Quest etc.).
-- Option to use the PC Speaker as additional channel
-- Supports typical "tracker effects" like portamento, volume slide etc.
+## Some of the features:
+- Import of the Tandy/PCjr music from Sierra AGI (AGIv2 and AGIv3) games (Kings Quest etc.)
+- Import of Amiga MOD pattern data
+- Option to use the PC Speaker as additional voice 
+- Supports typical "tracker effects" like portamento, volume slide, tone slide, arpeggio etc.
 - Own, space-saving file format
+- Supports various IO port settings, even parallel port, to support new hardware projects with this sound chip
+- Complete and easy-to-use player code included (100% assembler)
 
-I plan to support MIDI and VGM file formats in the future.
+I plan to support MIDI and VGM file formats in the future. 
 
 This project is actively developed by me and therefore I will update the source code here regularly.
-Current release is version 1.0.
-Version 1.1 is almost finished and will be released soon.
-The source code here is the current work status for version 1.1.
+So it's worth checking back here from time to time.
+
+Current release is version 1.2.
+
+
