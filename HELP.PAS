@@ -28,9 +28,9 @@ implementation
 
 const
  about_msg    : string = 'A tracker for the TANDY/PCjr 3-voice sound generator.';
- about_v_msg  : string = 'Released 05/05/2021';
- dedi_msg1    : string = 'Dedicated to all those who still enjoy';
- dedi_msg2    : string = 'old hardware and chiptunes in 2021.';
+ about_v_msg  : string = 'Released May 3rd 2021';
+ dedi_msg1    : string = 'Dedicated to all those who enjoy';
+ dedi_msg2    : string = 'old hardware and chiptunes.';
 
 
  Help_keys_lines = 71;
