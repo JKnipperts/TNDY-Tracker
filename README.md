@@ -5,6 +5,8 @@ new retro-hardware projects like Matze79's TNDY or Serdaco's TNDLPT sound device
 
 The tracker was written in old Borland Pascal 7.0, but with just a few modifications it should compile with Freepascal as well.
 
+![Alt text](https://github.com/JKnipperts/TNDY-Tracker/blob/master/Images/TNDY_playing_ptn.png?raw=true "Title")
+
 ## Some of the features:
 - Import of the Tandy/PCjr music from Sierra AGI (AGIv2 and AGIv3) games (Kings Quest etc.)
 - Import of Amiga MOD pattern data
@@ -28,4 +30,4 @@ Now everything is ready for playback and with calls of TND_Start and TND_Stop th
 TNDTEST.ASM and TNDPLAY.ASM are examples of the use of the player code. They also show how the current player status 
 can be queried or how I/O ports can be selected.
 
-![Alt text](https://github.com/JKnipperts/TNDY-Tracker/blob/master/Images/TNDY_playing_ptn.png?raw=true "Title")
+![Alt text](https://github.com/JKnipperts/TNDY-Tracker/blob/master/Images/TNDY_playing.png?raw=true "Title")
