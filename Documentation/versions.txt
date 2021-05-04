@@ -50,8 +50,7 @@ The development of the TNDY tracker so far:
   - still some nasty bugs to fix and it runs slow and tough on original Tandy 1000 and PCjr (but stable after all!)
      - therefore still a pre-release :(
   - tested some ideas for further effects and functions in this version
-
-
+  
  V. 1.2 - 03/05/2021
   - Optimised the pattern editor and fixed some small issues in it
   	- Added possibility to mark, copy and paste in pattern editor
@@ -68,6 +67,9 @@ The development of the TNDY tracker so far:
   - Completely revised screen drawing and screen buffering while playing
   - Finaly the tracker runs smooth even on a 4.7 MHz 8088 CPU !!!
   - disabled exporting of AGI files for this release because it causes some problems (sorry!)
-  - Fixed some keyboard issues on Tandy/PCjr
+  - Fixed some keyboard issues on Tandy/PCjr  
+  
+  V. 1.21
+  - Just a quick bugfix: In the Editor for the song message backspace doesn't always work correctly
 
 
