@@ -6,7 +6,7 @@
 
  Author: Jan Knipperts
  Program: TNDY-Tracker
- Version: 1.167
+ Version: 1.18
   - added misc configuration
   - support for new TNDYLPT
   - Updated message editor to new format
@@ -16,6 +16,7 @@
   - Added better support of Monochrome graphics
   - Removed swap tracks menu because of new copy/paste functions
   - Removed misc config as it is no longer needed
+  - fixed a little bug in the message editor
 
 
 *******************************************************************}
@@ -297,7 +298,17 @@ begin
 
   if (ord(key_Ascii) > $20) then
   begin
-     text[line][line_pos] := key_Ascii;
+
+     if length(text[line]) < 40 then
+     begin
+       if line_pos < length(text[line]) then
+        text[line][line_pos] := key_Ascii
+       else
+        text[line] := text[line]+key_Ascii;
+     end
+     else
+      text[line][line_pos] := key_Ascii;
+
      Next_char_pos;
      Print_Message;
      Clear_keypress;
@@ -315,16 +326,11 @@ begin
 
   if (key_code= 14) then {Backspace}
   begin
-    if line = 1 then
-     delete(text[line],line_pos-1,1)
-    else
-    begin
-      if (line_pos > 1) then
+    if (line_pos > 1) then
         delete(text[line],line_pos-1,1)
-      else
+    else
         delete(text[line-1],40,1);
-    end;
-
+    text[line][40] := ' ';
     Prev_char_pos;
     Print_Message;
     Clear_keypress;
