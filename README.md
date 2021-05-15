@@ -23,7 +23,8 @@ I plan to support MIDI and VGM file formats in the future.
 This project is actively developed by me and therefore I will update the source code here regularly.
 So it's worth checking back here from time to time.
 
-Current release is version 1.21.
+The last comprehensive release is version 1.2.
+Latest version is 1.21a, which fixes some small bugs that were reported back to me after the release of version 1.2, but otherwise contains no changes or new features.
 
 ## Player code:
 PLAYER.ASM contains all code to play a TND file. The use is very simple: Just include PLAYER.ASM in your program, 
