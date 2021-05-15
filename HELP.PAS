@@ -5,7 +5,7 @@
 
  Author: Jan Knipperts
  Program: TNDY-Tracker
- Version: 1.21a
+ Version: 1.21b
  - added new keys
  - removed effects introduced on a test basis in v1.1 (sorry guys!)
  - updated buffering
@@ -28,7 +28,7 @@ implementation
 
 const
  about_msg    : string = 'A tracker for the TANDY/PCjr 3-voice sound generator.';
- about_v_msg  : string = 'Released May 4th 2021';
+ about_v_msg  : string = '';
  dedi_msg1    : string = 'Dedicated to all those who enjoy';
  dedi_msg2    : string = 'old hardware and chiptunes.';
 

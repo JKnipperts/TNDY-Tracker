@@ -5,7 +5,7 @@
  Fileselector
  Author: Jan Knipperts
 
- Version  1.16 - December 28, 2020
+ Version  1.17 - May 15th 2021
           (22 years... I wrote version 1.0 on July 12, 1998 :) )
 
           Changes:
@@ -642,14 +642,14 @@ begin
   if key_code = ENTER then
   begin
 
-   if (dir[marked]^.attr and Directory <> 0) then {Verzeichnis?}
+   if (dir[marked]^.attr and Directory <> 0) then {directory?}
    begin
     lastdir := path;
     {$I-}
      chdir(dir[marked]^.name);
     {$I+}
 
-    if IOResult > 0 then
+    if IOResult <> 0 then
     begin
       chdir(lastdir);
     end
@@ -706,7 +706,7 @@ begin
     {$I-}
      chdir(fexpand(dir[marked]^.name)+'\');
     {$I+}
-     if  (IOresult > 0)  then
+     if  (IOresult <> 0)  then
      begin
       chdir(lastdir);
      end

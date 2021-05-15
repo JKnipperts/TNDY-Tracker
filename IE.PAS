@@ -262,11 +262,13 @@ begin
           if  (note_freq <>  last_nfreq) or {Is there a change in frequency or volume?}
               (SND.note.Attenuation <> last_attn)  then
           begin
+
             if SND.Note.Attenuation = 15 then
             begin
               n := 0;
               o := 0;
             end;
+
             patterns[Player.Position]^[Player.row][Editor.chan].note := n;
             patterns[Player.Position]^[Player.row][Editor.chan].Octave := o;
             patterns[Player.Position]^[Player.row][Editor.chan].volume := SND.Note.Attenuation+1;
@@ -293,8 +295,7 @@ begin
               end;
 
             end;
-           end;
-
+          end;
 
         end
         else
@@ -352,7 +353,7 @@ begin
      end; {while}
 
 
-     if sndcfg.mute_at_end then patterns[Player.Position]^[Player.row][Editor.chan].note := 13;
+     patterns[Player.Position]^[Player.row][Editor.chan].note := 13; {mute at track's end}
 
      end; {for}
 

@@ -19,7 +19,7 @@ uses dos;
 
 const
  title              : string = 'TNDY Tracker by Jan Knipperts';
- version            : string = 'Version 1.21';
+ version            : string = 'Version 1.21a';
  File_version       : byte = 2;  {File format version 2}
 
 
@@ -111,7 +111,6 @@ type
 
  SND_Import_cfg     = record	{Options for the import of AGI music files}
    correct	    : boolean;      {Correct frequency?}
-   mute_at_end	    : boolean;	    {place mute command at the end}
    Speed            : byte;         {Speed value to use}
    Tempo	    : byte;         {Tempo value to use}
    ClockFreq        : byte;         { 0 = 111860 Hz, 1 = 99320 Hz}
