@@ -24,8 +24,8 @@ This project is actively developed by me and therefore I will update the source 
 So it's worth checking back here from time to time.
 
 ## The latest version / program update:
-The last comprehensive release with demo songs, player code etc. was the v.1.2 release on 05 May 2021.
-The latest program version is 1.21a which fixes some small bugs and typos that were reported to me after the release of version 1.2 but otherwise contains no changes or new features.
+The last comprehensive release with demo songs, player code etc. was the v.1.21 release on 05 May 2021.
+The latest program version is 1.21a which fixes some small bugs and typos that were reported to me after the release of version 1.21 but otherwise contains no changes or new features.
 
 ## Player code:
 PLAYER.ASM contains all code to play a TND file. The use is very simple: Just include PLAYER.ASM in your program, 
