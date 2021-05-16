@@ -72,8 +72,9 @@ The development of the TNDY tracker so far:
   V. 1.21 - 04/05/2021
   - bugfix: In the Editor for the song message backspace doesn't always work correctly
  
-  V. 1.21a - 15/05/2021
+  V. 1.21a - 16/05/2021
   - bugfix: Apparently the AGI format requires that a voice is muted when there is no more data for that voice in the file. I have added this.
   - slightly optimised the drive recognition in the file selector.
+  - fixed a little typo in the menu
 
 
