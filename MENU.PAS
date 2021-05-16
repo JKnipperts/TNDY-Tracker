@@ -6,7 +6,7 @@
 
  Author: Jan Knipperts
  Program: TNDY-Tracker
- Version: 1.18
+ Version: 1.18a
   - added misc configuration
   - support for new TNDYLPT
   - Updated message editor to new format
@@ -17,6 +17,7 @@
   - Removed swap tracks menu because of new copy/paste functions
   - Removed misc config as it is no longer needed
   - fixed a little bug in the message editor
+  - fixed some typos
 
 
 *******************************************************************}
@@ -58,7 +59,7 @@
                  'Load Song',
                  'Save Song',
                  'Import Amiga MOD patterns',
-                 'Import AGI music ressource',
+                 'Import AGI music resource',
                  ''),
 
                 ('Play Song',
